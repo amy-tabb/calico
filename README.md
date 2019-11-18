@@ -98,7 +98,7 @@ Both work and those versions are compatible with CALICO.
 - `cmake  -DCMAKE_BUILD_TYPE=Debug ../src` (Debug configuration)
 - `cmake -G"Eclipse CDT4 - Unix Makefiles" -DCMAKE_ECLIPSE_GENERATE_SOURCE_PROJECT=TRUE ../src/` (Create an Eclipse project to import -- it will be in the build folder)
 
-In case you have installed OpenCV and cmake can't find it, you need to specify the location of `OpenCVConfig.cmake`.  Don't know where it is?   Find out with `locate OpenCVConfig.cmake`.  Then for append
+In case you have installed OpenCV and cmake can't find it, you need to specify the location of `OpenCVConfig.cmake`.  Don't know where it is?   Find out with `locate OpenCVConfig.cmake`.  Then append
 
 `-DCMAKE_PREFIX_PATH=dir`
 
@@ -111,7 +111,7 @@ where `/usr/local/opencv41/lib/cmake/opencv4/` is the directory containing `Open
 
 6. Then, you can either import the project to Eclipse (if you used the last option), or build from there, or type `make`.   If the everything compiled and linked, and you have an executable named `calico`, you are ready to go. 
 
-7. I highly suggest that you download at least one test dataset from TODO.  These are in the format needed for CALICO, and you can ensure that everything is correctly configured on your system.
+7. I highly suggest that you download at least one test dataset from [http://doi.org/10.5281/zenodo.3520866](http://doi.org/10.5281/zenodo.3520866).  These datasets are in the format needed for CALICO, and you can ensure that everything is correctly configured on your system.
 
 ## Running
 
@@ -447,4 +447,4 @@ doc-after-stage3.pdf
 #### TODO
 Check for bad input : the number of markers specified in the files is greater than the size of the aruco dictionary.
 Check for bad input : alert if markerLength is > squareLength
-Verbose and write: Add another flag for writing output, lots of images written.
+Verbose and write: Add another flag for writing output, as lots of images are currently written.
