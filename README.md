@@ -4,9 +4,6 @@ Comments/Bugs/Problems: amy.tabb@usda.gov , or open an issue on Github.
 
 CALICO: a method for calibrating asynchronous camera networks and/or multicamera systems, version 1.0. October 2019.
 
-TODO insert to latex citations here after arXiv is live.
-Remove OpenCV 4.0 requirement
-
 # Underlying ideas; how and when to cite this work
 
 This README file is produced by Amy Tabb as a companion to a paper:
