@@ -2,7 +2,7 @@
 
 Comments/Bugs/Problems: amy.tabb@usda.gov , or open an issue on Github.
 
-CALICO: a method for calibrating asynchronous camera networks and/or multicamera systems, version 1.0. October 2019.
+CALICO: a method for calibrating asynchronous camera networks and/or multicamera systems, version 1.0. November 2019.
 
 # Underlying ideas; how and when to cite this work
 
@@ -64,7 +64,7 @@ We are not responsible for whatever it takes to get Ceres to build; but advise t
 - `opencv_aruco` 
 - `opencv_calib3d`
 
-[OpenMP](https://www.openmp.org/) OpenMP is used to parallelize some sections of the individual camera calibration section.  On Ubuntu, to install the library, run `sudo apt-get install libgomp1` at a terminal.   
+[OpenMP](https://www.openmp.org/) OpenMP is used to parallelize some sections of the individual camera calibration section.  On Ubuntu, to install the library, run `sudo apt-get install libgomp1` at a terminal.   Note that the use of OpenMP is optional, and only speeds up some image loading operations.  Instructions to compile and link without OpenMP are given in the [Building](#building) section.  Evidently, OpenMP support on MacOS is ... difficult to accomplish.
 
 [tex-live](https://tug.org/texlive/) If you enable the `--verbose` option for CALICO, some of the output will be written to latex files, and then .pdfs will be generated.  To get this all to work, the `pdflatex` needs to be available.  On Ubuntu again, run `sudo apt-get install texlive-latex-base` to get started.
 
@@ -90,6 +90,19 @@ These instructions will walk you through cloning to configuring with cmake, and 
 - `find_package( OpenCV 4 REQUIRED )`
 
 Both work and those versions are compatible with CALICO. 
+
+If you do not want to use OpenMP, then within the `Includes.hpp` file, comment out
+
+````c++
+#include <parallel/algorithm>
+#include <omp.h>
+````
+
+and in the `CMakeLists.txt` file, comment (with # ) the first `set(CMAKE_CXX_FLAGS} ...` line and uncomment the second one.  
+
+Still within `CMakeLists.txt`, comment the first `target_link_libraries(...` and uncomment the second one.  
+
+I have set up those commands such that calico will not be compiled or linked with OpenMP.  That's it!
 
 5. Configure with cmake.  Don't have cmake? (`sudo apt-get install cmake`). Then from the build folder, you can use any of the following four options below: 
 
