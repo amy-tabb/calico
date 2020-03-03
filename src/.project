@@ -2,12 +2,14 @@
 <projectDescription>
 	<name>calico-Source@src</name>
 	<comment></comment>
-	<projects>
-	</projects>
-	<buildSpec>
-	</buildSpec>
-	<natures>
-	</natures>
+	<projects></projects>
+	<buildSpec></buildSpec>
+	<natures></natures>
 	<linkedResources>
+		<link>
+			<name>[Subprojects]</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
 	</linkedResources>
 </projectDescription>
