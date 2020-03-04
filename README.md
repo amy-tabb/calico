@@ -269,7 +269,7 @@ And this will start the container.  Suppose we forgot to create a directory for 
 root@d208fe4482b5:/docker_dir# 
 ````
 
-Supposing we forgot to create a directpry for the results, we can do so from the terminal here:
+Supposing we forgot to create a directory for the results, we can do so from the terminal here:
 
 ````bash
 root@d208fe4482b5:/docker_dir# mkdir results/
@@ -277,7 +277,7 @@ root@d208fe4482b5:/docker_dir# mkdir results/
 Then, we can call calico.  Note that the `--src-dir=[STRING]` flag is not needed; the paths have already been set to the defaults within the Docker image. For example using the `sim-1-base` dataset:
 
 ````
-root@d208fe4482b5:/docker_dir# calico --input sim-1-base/ --output result/ --zero-tangent --zero-k3 --network
+root@d208fe4482b5:/docker_dir# calico --input sim-1-base/ --output results/ --zero-tangent --zero-k3 --network
 ````
 
 
