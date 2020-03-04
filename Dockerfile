@@ -2,7 +2,7 @@ FROM amytabb/ubuntu18-ceres-opencv4-contrib-all:latest
 
 MAINTAINER Amy Tabb
 
-#cass
+#calico
 WORKDIR /installed_libs/
 
 RUN git clone https://github.com/amy-tabb/calico.git
@@ -19,7 +19,7 @@ RUN make install
 
 RUN apt-get -y install exiftool
 
-WORKDIR /host_dir/
+WORKDIR /docker_dir/
 
 
 

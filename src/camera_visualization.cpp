@@ -822,7 +822,6 @@ void WritePatternsSkips(vector<Vector3d>& pattern_points, int index_number, stri
 		std::ofstream out;
 		out.open(outfile.c_str());
 
-		// first row has chess_h - 2 faces ?
 		int number_faces = 0; //(chess_h/2)*(chess_w/2) + (chess_h/2 - 1)*(chess_w/2 - 1);
 
 
@@ -840,10 +839,9 @@ void WritePatternsSkips(vector<Vector3d>& pattern_points, int index_number, stri
 		out << "property list uchar int vertex_indices"<< endl;
 		out << "end_header" << endl;
 
-		for (int i = 0; i < pattern_points.size(); i++){
+		for (uint i = 0; i < pattern_points.size(); i++){
 			out << pattern_points[i](0) << " " << pattern_points[i](1) << " " << pattern_points[i](2) << " " << c[0] << " " << c[1] << " " << c[2] << " 175" << endl;
 		}
-
 
 
 		out << endl;
