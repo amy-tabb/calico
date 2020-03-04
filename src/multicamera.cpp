@@ -2006,7 +2006,7 @@ void MCcali::WriteSimulatedCamerasAtAllTimes(string write_directory, string curr
 
 
 					create_camera(CCV[i]->internal_parameters, ProposedMat, camera_size, 0, 255, 255,
-							CCV[i]->rows, CCV[i]->cols, filename, true);
+							CCV[i]->rows, CCV[i]->cols, filename);
 
 					center = ReturnCenter(ProposedMat);
 
@@ -2080,7 +2080,7 @@ void MCcali::WriteSimulatedCamerasForRotatingCase(string write_directory, string
 
 
 					create_camera(CCV[i]->internal_parameters, ProposedMat, camera_size, 0, 255, 255,
-							CCV[i]->rows, CCV[i]->cols, filename, true);
+							CCV[i]->rows, CCV[i]->cols, filename);
 
 					center = ReturnCenter(ProposedMat);
 
@@ -2619,15 +2619,18 @@ void MCcali::WriteSolutionAssessError(string write_directory, vector<string>& ca
 
 		switch (type){
 		case -2: {
-			create_camera(GTD->InternalMatrices[i], vector_to_use[i], camera_size, cam_color(0), cam_color(1), cam_color(2), CCV[i]->rows, CCV[i]->cols, filename, true);
+			create_camera(GTD->InternalMatrices[i], vector_to_use[i], camera_size, cam_color(0), cam_color(1),
+					cam_color(2), CCV[i]->rows, CCV[i]->cols, filename);
 		} break;
 		case -1: {
-			create_camera(GTD->InternalMatrices[i], vector_to_use[i], camera_size, cam_color(0), cam_color(1), cam_color(2), CCV[i]->rows, CCV[i]->cols, filename, true);
+			create_camera(GTD->InternalMatrices[i], vector_to_use[i], camera_size, cam_color(0), cam_color(1),
+					cam_color(2), CCV[i]->rows, CCV[i]->cols, filename);
 		} break;
 		case 0: {
 			if (V_has_initialization[i]){
 				// rows and cols are empty
-				create_camera(CCV[i]->internal_parameters, vector_to_use[i], camera_size, cam_color(0), cam_color(1), cam_color(2), CCV[i]->rows, CCV[i]->cols, filename, true);
+				create_camera(CCV[i]->internal_parameters, vector_to_use[i], camera_size, cam_color(0), cam_color(1),
+						cam_color(2), CCV[i]->rows, CCV[i]->cols, filename);
 				internals.push_back(CCV[i]->internal_parameters);
 				externals.push_back(vector_to_use[i]);
 			}
@@ -2635,7 +2638,8 @@ void MCcali::WriteSolutionAssessError(string write_directory, vector<string>& ca
 		case 1: {
 			if (V_has_initialization[i]){
 				// rows and cols are empty
-				create_camera(CCV[i]->internal_parameters, vector_to_use[i], camera_size, cam_color(0), cam_color(1), cam_color(2), CCV[i]->rows, CCV[i]->cols, filename, true);
+				create_camera(CCV[i]->internal_parameters, vector_to_use[i], camera_size, cam_color(0), cam_color(1),
+						cam_color(2), CCV[i]->rows, CCV[i]->cols, filename);
 				internals.push_back(CCV[i]->internal_parameters);
 				externals.push_back(vector_to_use[i]);
 			}

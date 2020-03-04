@@ -11,11 +11,10 @@
 #include "Includes.hpp"
 
 int create_camera(Matrix3d& internal, Matrix4d& external, Vector3d& C, int r, int g, int b, int rows, int cols,
-		string ply_file, bool OpenGL, float camera_size);
+		string ply_file, float camera_size);
 
 int create_camera(Matrix3d& internal, Matrix4d& external, float camera_size, int r, int g, int b, int rows, int cols,
-		string ply_file,
-		bool OpenGL);
+		string ply_file);
 
 int create_camera(vector< Vector3d >& vertex_coordinates, vector< vector<int> >& face_indices,
 		Matrix3d& internal, Matrix4d& external, Vector3d& C, int rows, int cols, float camera_size);

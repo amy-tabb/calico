@@ -33,8 +33,12 @@ helper.hpp
 )
 
 target_link_libraries(calico ${CERES_LIBRARIES} Eigen3::Eigen gomp ${OpenCV_LIBS})
+
 # no OpenMP version below
 # target_link_libraries(calico ${CERES_LIBRARIES} Eigen3::Eigen ${OpenCV_LIBS})
 
+# install for Docker build 
+set_property(TARGET calico PROPERTY INSTALL_RPATH_USE_LINK_PATH TRUE)
 
+install(TARGETS calico  DESTINATION ${CMAKE_INSTALL_PREFIX}/bin )
 

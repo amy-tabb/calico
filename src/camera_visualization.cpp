@@ -141,7 +141,7 @@ int create_camera(vector< Vector3d >& vertex_coordinates, vector< vector<int> >&
 }
 
 int create_camera(Matrix3d& internal, Matrix4d& external, Vector3d& C, int r, int g, int b, int rows, int cols,
-		string ply_file, bool OpenGL, float camera_size)
+		string ply_file, float camera_size)
 {
 	vector< Vector3d > vertex_coordinates;
 	vector< Vector3d > vertex_normals;
@@ -321,8 +321,7 @@ Vector3d ReturnCenter(Matrix4d& external){
 
 }
 
-int create_camera(Matrix3d& internal, Matrix4d& external, float camera_size, int r, int g, int b, int rows, int cols, string ply_file,
-		bool OpenGL){
+int create_camera(Matrix3d& internal, Matrix4d& external, float camera_size, int r, int g, int b, int rows, int cols, string ply_file){
 
 
 	Vector3d C;
@@ -341,7 +340,7 @@ int create_camera(Matrix3d& internal, Matrix4d& external, float camera_size, int
 	//C = -R.inverse()*t;
 	C = -R.transpose()*t;
 
-	create_camera(internal, external, C, r, g, b, rows, cols, ply_file, OpenGL, camera_size);
+	create_camera(internal, external, C, r, g, b, rows, cols, ply_file, camera_size);
 
 	return 0;
 }
