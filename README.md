@@ -11,7 +11,7 @@ Roadmap
 - [Dependences](#dependencies)
 - [Building](#building)
 - [Running](#running)
-	- [Running from a Docker container](running-from-a-docker-container)
+	- [Running from a Docker container](#running-from-a-docker-container)
 - [Input format](#input-format)
 - [Output format](#output-format)
 	
