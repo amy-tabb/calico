@@ -1,8 +1,23 @@
 # calico
 
-Comments/Bugs/Problems: amy.tabb@usda.gov , or open an issue on Github.
-
 CALICO: a method for calibrating asynchronous camera networks and/or multicamera systems, version 1.0. November 2019.
+
+Changelog: Docker image added March 2020.
+
+Roadmap
+- [Contact](#contact)
+- [References](#underlying-ideas-how-and-when-to-cite-this-work)
+- [Docker release](#docker-release)
+- [Dependences](#dependencies)
+- [Building](#building)
+- [Running](#running)
+	- [Running from a Docker container](running-from-a-docker-container)
+- [Input format](#input-format)
+- [Output format](#output-format)
+	
+# Contact 
+
+Comments/Bugs/Problems: amy.tabb@usda.gov, or open an issue on Github.
 
 # Underlying ideas; how and when to cite this work
 
@@ -26,7 +41,7 @@ This README file is produced by Amy Tabb as a companion to a paper:
 
 Dataset and/or code:
 
-Tabb, Amy, & Feldmann, Mitchell J. (2019). Data and Code from: Calibration of Asynchronous Camera Networks: CALICO (Version 1.0) [Data set]. Zenodo. http://doi.org/10.5281/zenodo.3520866
+Tabb, Amy, & Feldmann, Mitchell J. (2019). Data and Code from: Calibration of Asynchronous Camera Networks: CALICO (Version 1.0) [Data set]. Zenodo. [http://doi.org/10.5281/zenodo.3520866](http://doi.org/10.5281/zenodo.3520866)
 
 ````latex
 @dataset{tabb_amy_2019_3520866,
@@ -44,9 +59,60 @@ Tabb, Amy, & Feldmann, Mitchell J. (2019). Data and Code from: Calibration of As
 
 If you use this code in project that results in a publication, please cite at a minimum the paper above, and best practice would be to cite the paper and the dataset.  Otherwise, there are no restrictions in your use of this code.  However, no guarantees are expressed or implied.
 
-# Building
+## Docker release
 
-This README covers instructions for building the code.
+To avoid building the code yourself, a Docker image of this project is available, and the Dockerfile used to generate it is part of this repository.
+
+I suggest using the Docker release to evaluate this code and as a fast way to get started with it, as the code itself runs quickly.  If you want to extend or look at the details of the code, you can build it yourself using the instructions and code in this repository.
+
+### Install Docker
+
+[Install Docker](https://docs.docker.com/install/), if you haven't already.  I endorse uninstalling old versions if you have them floating around.
+
+### Pull the image
+
+The image for CALICO is : [amytabb/calico](https://hub.docker.com/r/amytabb/calico).
+
+```bash
+docker pull amytabb/calico
+```
+
+### Run the image
+
+CALICO needs to read and write results to disk; to do so with Docker means that we need to mount a portion of your hard drive to a volume in the Docker image.
+
+I used a bind mount below; the Docker image's volume is `docker_dir` and will not change no matter which machine or dataset you run it on.  `/full/file/path/on/your/machine` is the directory that you want the reading and writing to occur.  
+
+Example:
+
+```bash
+sudo docker run -v /full/file/path/on/your/machine:/docker_dir -it amytabb/calico:latest bash
+```
+
+The bind mount is potentially confusing, so here is an example.  Say I have a directory `/home/amy/Data/March/` and within `March` is a directory of images that I want to process with CALICO.  I also want to write to a directory within `/home/amy/Data/March/`.  So, 
+
+```bash
+sudo docker run -v /home/amy/Data/March:/docker_dir -it amytabb/calico:latest bash
+```
+
+Creates a container with all of the libraries and a Ubuntu 18.04 operating system, and bash shell (command line), and may look something like:
+
+```bash
+root@f6feb7ce8c31:/docker_dir# 
+```
+
+but if you take a look at the contents of `/host_dir`, with `ls`, they are `/home/amy/Data/March/`.  That's the bind mount magic.
+
+First, suppose we forgot to create the write directory.  No problem.
+
+```bash
+root@f6feb7ce8c31:/host_dir# mkdir write-dir
+```
+
+creates our write directory `write-dir`.
+
+And from here on out, we issue commands from this Docker container, which is writing to our filesystem.  Skip to [Running](#running) to get details on how to run the code.  The only difference is that `./` is not needed before commands when using the Docker version, and the `--src-dir=[STRING]` has been set up within the Docker image, and does not need to be specified. 
+
 
 ## Dependencies
 
@@ -72,7 +138,6 @@ We are not responsible for whatever it takes to get Ceres to build; but advise t
 
 This code has been tested on Ubuntu 16.04 and Ubuntu 18.04.  You are welcome to convert it to Windows, but I have not.  While OpenCV is available from distribution repositories, my long experience with it is has always been to build from the source to get the best results.
 
-**Is getting all of this to work on your system too much of a pain and you are interested in a Docker release?  Let me know!  The squeaky wheel gets the grease.  Email above.**
 
 ## Building 
 
@@ -166,7 +231,7 @@ DISPLAY -----------
 All other arguments are ignored.
 ````
 
-Assuming you've downloaded some of the datasets from TODO, the arguments used to run a sampling is here:
+Assuming you've downloaded some of the datasets from Zenodo [http://doi.org/10.5281/zenodo.3520866](http://doi.org/10.5281/zenodo.3520866), the arguments used to run a sampling is here:
 
 sim1:  `./calico --network --k=8 --zero-tangent --zero-k3  --input=/home/username/data-calico/sim1/base/ --output=/home/username/data-calico/sim1/result/ --camera-size=80 --track-size=8 --ground-truth --verbose`
 
@@ -189,6 +254,31 @@ It is suggested that you generate aruco patterns to use in your own calibrations
 ````
 
 4. The code create calibration patterns  -- in the `patterns` subdirectory within the output directory.  Print and measure the squares.  Edit the `squareLength_mm` parameter in the `pattern_square_mmNUMBER.txt` files.  
+
+### Running from a Docker container
+
+As mentioned in [Run the image](#run-the-image), you start the Docker container from the command line, and then issue commands similar to above.  So, start the container running, 
+
+````bash
+sudo docker run -v /home/amy/Data/March/:/docker_dir -it amytabb/calico:latest bash
+````
+
+And this will start the container.  Suppose we forgot to create a directory for the results. 
+ 
+````bash
+root@d208fe4482b5:/docker_dir# 
+````
+
+Supposing we forgot to create a directpry for the results, we can do so from the terminal here:
+
+````bash
+root@d208fe4482b5:/docker_dir# mkdir results/
+````
+Then, we can call calico.  Note that the `--src-dir=[STRING]` flag is not needed; the paths have already been set to the defaults within the Docker image. For example using the `sim-1-base` dataset:
+
+````
+root@d208fe4482b5:/docker_dir# calico --input sim-1-base/ --output result/ --zero-tangent --zero-k3 --network
+````
 
 
 # Input format
