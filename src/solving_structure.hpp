@@ -30,6 +30,31 @@ using namespace std;
 
 enum PARAM_TYPE { Cali_Quaternion };
 
+class CeresProblemClass{
+public:
+	PARAM_TYPE param_type = Cali_Quaternion; ///  = Cali_Quaternion;
+	int number_variables = 0;
+	int number_equations = 0;
+	double* x = 0; // variables.
+	double* vars_initial = 0; /// necessary for those vars that participate in the function but are not solved for by it.
+	bool* bit_vector_bool = 0; ///   meaning, writehere = new bool[number_variables];  only the vars that are solved for are sent to the function, right?
+	bool* bit_vector_equations = 0;
+	Solver::Options options; ///
+	Problem problem;
+
+	CeresProblemClass(PARAM_TYPE parameter_type, MCcali& MC, std::ofstream& out);
+	// set it up
+
+	~CeresProblemClass();
+
+
+	void AddToProblem(MCcali& MC, vector<CameraCali*>& CCV, double* camera_params, std::ofstream& out);
+
+	void SolveWriteBackToMC(MCcali& MC, std::ofstream& out, int iterations, bool output_to_terminal);
+
+};
+
+
 template <typename T>
 void ConvertMatrixTo7QuaternionRepresentationx(Matrix4d& M, T* X){
 
@@ -199,7 +224,6 @@ void MinimizeReprojectionError(MCcali& MC, vector<CameraCali*>& CCV, double* cam
 
 void SolveWithShahsMethod(Matrix4d& Result, vector<Matrix4d>& LHS, vector<Matrix4d>& RHS, bool verbose);
 
-
 struct MultiCameraReprojectionError {
 	MultiCameraReprojectionError(double* camera_parameters, double* twoDpoints, double* threeDpoints, double* vars_initial,
 			bool* bitvector_vars_min, PARAM_TYPE param_type,
@@ -208,12 +232,22 @@ struct MultiCameraReprojectionError {
 				param_type(param_type), number_variables(number_variables), c_index(c_index), p_index(p_index), t_index(t_index), weighting(weighting){
 	}
 
+
+
+	MultiCameraReprojectionError(double* camera_parameters, double im_x, double im_y, cv::Point3f pt3f, double* vars_initial,
+			bool* bitvector_vars_min, PARAM_TYPE param_type,
+			int number_variables, int c_index, int p_index, int t_index):
+				camera_parameters(camera_parameters), im_x(im_x), im_y(im_y), pt3f(pt3f), vars_initial(vars_initial),
+				bitvector_vars_min(bitvector_vars_min),
+				param_type(param_type), number_variables(number_variables), c_index(c_index), p_index(p_index), t_index(t_index){
+	}
+
 	template <typename T>
 
+	// redo this to handle the case when sent empty items.
 	bool operator()(const T* const camera_var,
 			const T* const pattern_var, const T* const time_var,
 			T* residuals) const {
-
 
 		// A = C * Tinv * Pinv T and P are already in inverse
 
@@ -227,7 +261,16 @@ struct MultiCameraReprojectionError {
 
 
 
-		T w = T(sqrt(*weighting));
+		T w;
+
+		if (weighting != 0)
+		{
+			// why sqrt?
+			w = T(sqrt(*weighting));
+
+		}	else {
+			w = T(1);
+		}
 
 
 		for (int i = 0; i < 7; i++){
@@ -319,8 +362,15 @@ struct MultiCameraReprojectionError {
 		k5 = T(camera_parameters[10]);
 		k6 = T(camera_parameters[11]);
 
-		for (int j = 0; j < 3; j++){
-			Xp[j] = T(threeDpoints[j]);
+
+		if (threeDpoints != 0){
+			for (int j = 0; j < 3; j++){
+				Xp[j] = T(threeDpoints[j]);
+			}
+		}	else {
+			Xp[0] = T(pt3f.x);
+			Xp[1] = T(pt3f.y);
+			Xp[2] = T(pt3f.z);
 		}
 		Xp[3] = T(1);
 
@@ -340,8 +390,15 @@ struct MultiCameraReprojectionError {
 		T predicted_x = (xpp[0]*K[0] + K[2]);
 		T predicted_y = (xpp[1]*K[4] + K[5]);
 
-		residuals[0] = w*(predicted_x - T(twoDpoints[0]));
-		residuals[1] = w*(predicted_y - T(twoDpoints[1]));
+		if (twoDpoints != 0){
+			residuals[0] = w*(predicted_x - T(twoDpoints[0]));
+			residuals[1] = w*(predicted_y - T(twoDpoints[1]));
+		}	else {
+			residuals[0] = w*(predicted_x - T(im_x));
+			residuals[1] = w*(predicted_y - T(im_y));
+		}
+
+
 
 		return true;
 	}
@@ -357,18 +414,34 @@ struct MultiCameraReprojectionError {
 	}
 
 
-	double* camera_parameters;
-	double* twoDpoints;
-	double* threeDpoints;
-	double* vars_initial;
-	bool* bitvector_vars_min;
+	static ceres::CostFunction* Create(double* camera_parameters, double im_x, double im_y, cv::Point3f pt3f, double* vars_initial,
+			bool* bitvector_vars_min, PARAM_TYPE param_type,
+			int number_variables, int c_index, int p_index, int t_index) {
 
-	PARAM_TYPE param_type;
-	int number_variables;
-	int c_index; // within var space
-	int p_index; // within var space inverted
-	int t_index; /// within var space, inverted
-	double* weighting;
+		return (new ceres::AutoDiffCostFunction<MultiCameraReprojectionError, 2, 7, 7, 7>(
+				new MultiCameraReprojectionError(camera_parameters, im_x, im_y, pt3f, vars_initial,
+						bitvector_vars_min,
+						param_type,  number_variables, c_index, p_index, t_index)));
+	}
+
+
+	double* camera_parameters = 0;
+	double* twoDpoints = 0;
+	double* threeDpoints = 0;
+	double im_x = -1;
+	double im_y = -1;
+	cv::Point3f pt3f;
+	double* vars_initial = 0;
+	bool* bitvector_vars_min = 0;
+
+
+
+	PARAM_TYPE param_type = Cali_Quaternion;
+	int number_variables = 0;
+	int c_index = -1; // within var space
+	int p_index = -1; // within var space inverted
+	int t_index = -1; /// within var space, inverted
+	double* weighting = 0;
 };
 
 

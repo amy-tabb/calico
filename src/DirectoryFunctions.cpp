@@ -62,7 +62,6 @@ void ReadDirectory(string dir_name, vector<string>& content_names){
 			s= dp->d_name;
 			if (s.at(s.size() - 1) != '~'){
 				content_names.push_back(dp->d_name);
-				cout << "Reading ..." << dp->d_name << endl;
 			}
 		}
 

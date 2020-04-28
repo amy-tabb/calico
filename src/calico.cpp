@@ -6,13 +6,13 @@
 // Description :
 //============================================================================
 
+#include "calico.hpp"
+
 #include "helper.hpp"
 #include "DirectoryFunctions.hpp"
 #include "camera_calibration.hpp"
 #include "multicamera.hpp"
 #include "solving_structure.hpp"
-#include "calico.hpp"
-
 
 int main(int argc, char **argv){
 
@@ -20,8 +20,8 @@ int main(int argc, char **argv){
 	int rotating = 0;
 	int network = 0;
 	int verbose = 0;
-	int zero_tangent_dist = 0;
-	int zero_k3 = 0;
+	int zero_tangent_dist = 1; // default is to have these set to zero
+	int zero_k3 = 1;           // default is to have these set to zero
 	int read_camera_calibration = 0;
 	int only_camera_calibration = 0;
 	int max_internal_read  = -1; // not initialized;
@@ -33,6 +33,8 @@ int main(int argc, char **argv){
 	int fix_principal_point = 0;
 	int number_points_needed_to_count_pattern = -1;
 	int synchronized_rotating_option = 0;
+	int interleaved_solve = 1; // set as default, since the best option.
+	int number_threads = omp_get_max_threads();
 
 	string input_dir = "";
 	string output_dir = "";
@@ -55,12 +57,13 @@ int main(int argc, char **argv){
 				{"create-patterns", no_argument, &create_patterns_only, 1},
 				{"read-camera-cali", no_argument, &read_camera_calibration, 1},
 				{"only-camera-cali", no_argument, &only_camera_calibration, 1},
-				{"zero-tangent", no_argument,       &zero_tangent_dist, 1},
-				{"zero-k3", no_argument,       &zero_k3, 1},
+				{"non-zero-tangent", no_argument,       &zero_tangent_dist, 0},
+				{"non-zero-k3", no_argument,            &zero_k3, 0},
 				{"fix-pp", no_argument, &fix_principal_point, 1},
 				{"verbose", no_argument, &verbose, 1},
 				{"ground-truth", no_argument, &ground_truth, 1},
 				{"synch-rotate", no_argument, &synchronized_rotating_option, 1},
+				{"non-incremental", no_argument, &interleaved_solve, 0},
 				/* These options don’t set a flag.
 	             We distinguish them by their indices. */
 				{"input",   required_argument, 0, 'a'},
@@ -74,6 +77,7 @@ int main(int argc, char **argv){
 				{"k", required_argument, 0, 'i'},
 				{"track-size", required_argument, 0, 'j'},
 				{"num-pattern", required_argument, 0, 'k'},
+				{"num-threads", required_argument, 0, 'l'},
 		};
 
 
@@ -83,28 +87,36 @@ int main(int argc, char **argv){
 			cout << "ESSENTIAL FUNCTIONALITY -------------------" << endl;
 			cout << std::left << setw(30) << "--verbose" << "No arguments.  Writes additional information during the run." << endl;
 			cout << std::left << setw(30) << "--create-patterns" << "No arguments, write aruco image patterns from a specification file." << endl;
-			cout << std::left << setw(30) << "--network" << "No arguments, indicates that this dataset is a camera network or multicamera system." << endl;
-			cout << std::left << setw(30) << "--rotating" << "No arguments, indicates that this dataset is the rotating type with background." << endl;
-			cout << std::left << setw(30) << "--synch-rotate" << "No arguments, indicates the where there are multiple cameras in the rotating case, that they are synchronized.  Default is false. (not synchronized)." << endl;
+			cout << std::left << setw(30) << "--network" << "No arguments, indicates that this dataset is a camera network or ";
+			cout << "multicamera system." << endl;
+			cout << std::left << setw(30) << "--rotating" << "No arguments, indicates that this dataset is the rotating type ";
+			cout << "with background." << endl;
+			cout << std::left << setw(30) << "--synch-rotate" << "No arguments, indicates the where there are multiple ";
+			cout << "cameras in the rotating case, that they are synchronized.  Default is false. (not synchronized)." << endl;
 			cout << std::left << setw(30) << "--ground-truth " << "No arguments. The ground truth calibration information is available." << endl;
-
+			cout << std::left << setw(30) << "--num-threads "<< "Number of threads to use.  Default is # returned by ";
+			cout << "omp_get_max_threads();, currently = " << number_threads << endl;
+			cout << std::left << setw(30) << "--non-incremental " << "No arguments.  Set the solving method to use the linear the ";
+			cout << "non-linear match minimization, instead of the default incremental linear/non-linear reprojection error algo." << endl;
 
 			cout << endl;
 			cout << "DIRECTORIES AND PATHS ----------------------- " << endl;
 			cout << std::left << setw(30) << "--input=[STRING] "<< "Mandatory, has to be a directory." << endl;
 			cout << std::left << setw(30) << "--output=[STRING] " << "Mandatory, has to be a directory." << endl;
 			cout << std::left << setw(30) << "--src-dir=[STRING] ";
-			cout << "Directory where the source code resides relative to where the executible is being run. " << endl;
+			cout << "Directory where the source code resides relative to where the executable is being run. " << endl;
 			cout << " Specifically, the location of 'detector_params.yml'  Default is ../src/ . " << endl;
 
 			cout << endl;
 			cout << "CAMERA CALIBRATION OPTIONS ---------------------------" << endl;
 			cout << std::left << setw(30) << "--only-camera-cali" << "No arguments, only perform individual camera calibration, but not network calibration." << endl;
 			cout << std::left << setw(30) << "--read-camera-cali" << "No arguments, read-previously-computed camera calibration from file.  It should be in the output directory."   << endl;
-			cout << std::left << setw(30) << "--zero-tangent " << "No arguments. In the camera calibration part, sets the tangential components of radial distortion (p1, p2) to zero." << endl;
-			cout << std::left << setw(30) << "--zero-k3 " << "No arguments. In the camera calibration part, sets the 3rd radial distortion k value to zero." << endl;
+			cout << std::left << setw(30) << "--non-zero-tangent " << "No arguments. In the camera calibration part, sets the tangential components of radial distortion (p1, p2) to non-zero." << endl;
+			cout << std::left << setw(30) << "--non-zero-k3 " << "No arguments. In the camera calibration part, sets the 3rd radial distortion k value to non-zero." << endl;
 			cout << std::left << setw(30) << "--fix-pp " << "No arguments. In the camera calibration part, sets the principal point to the image center. " << endl;
 			cout << std::left << setw(30) << "--focal-px=[float] " << "Initial focal length in pixels for the camera.  Default is max dimension * 1.2 " << endl;
+
+			cout << endl;
 
 			cout << endl;
 			cout <<"OPTIONS ON NUMBER OF IMAGES READ/USED; NUMBER OF POINTS USED FOR NETWORK -----------" << endl;
@@ -133,7 +145,7 @@ int main(int argc, char **argv){
 		int option_index = 0;
 		int opt_argument;
 
-		opt_argument = getopt_long (argc, argv, "abcdefghijk",
+		opt_argument = getopt_long (argc, argv, "abcdefghijkl",
 				long_options, &option_index);
 
 		/* Detect the end of the options. */
@@ -185,6 +197,9 @@ int main(int argc, char **argv){
 			break;
 		case 'k':
 			number_points_needed_to_count_pattern  = FromString<int>(optarg);
+			break;
+		case 'l':
+			number_threads  = FromString<int>(optarg);
 			break;
 		default:{
 			cout << "Argument not found " << optarg << endl;
@@ -283,12 +298,14 @@ int main(int argc, char **argv){
 	}
 
 
-	if (zero_tangent_dist){
-		out << "--zero-tangent ";
+	if (zero_tangent_dist == 0){
+		out << "--non-zero-tangent ";
 	}
-	if (zero_k3){
-		out << "--zero-k3  ";
+	if (zero_k3 == 0){
+		out << "--non-zero-k3  ";
 	}
+
+	out << "--num-threads "<< number_threads << " ";
 
 	out << "--input=" << input_dir << " " ;
 	out << "--output=" << output_dir << " ";
@@ -299,9 +316,7 @@ int main(int argc, char **argv){
 		cout << "I am correcting this error, check the argument file --   " << endl;
 
 		max_internal_use = max_internal_read;
-
 	}
-
 
 	out << "--camera-size="<< camera_size << " " ;
 	out << "--track-size="<< track_size << " " ;
@@ -334,6 +349,10 @@ int main(int argc, char **argv){
 
 	if (read_camera_calibration > 0){
 		out << "--read-camera-cali ";
+	}
+
+	if (interleaved_solve == 0){
+		out << "--non-incremental " << endl;
 	}
 
 	if (verbose > 0 ){
@@ -371,7 +390,8 @@ int main(int argc, char **argv){
 				initial_focal_px, zero_tangent_dist,
 				zero_k3, fix_principal_point,
 				ground_truth, verbose, read_camera_calibration, only_camera_calibration, max_internal_read, max_internal_use,
-				max_external_positions, selectedk, number_points_needed_to_count_pattern, synchronized_rotating_option);
+				max_external_positions, selectedk, number_points_needed_to_count_pattern, synchronized_rotating_option,
+				interleaved_solve);
 	}
 
 
@@ -402,7 +422,7 @@ void MultipleCameraCalibration(int calibration_context, string input_dir, string
 		float camera_size, float track_size,  float initial_focal_px, int zero_tangent_dist, int zero_k3, int fix_principal_point,
 		bool has_ground_truth, bool verbose, bool read_camera_calibration, bool only_camera_calibration,
 		int max_internal_read, int max_internal_use, int max_external_positions, int selectedk,
-		int number_points_needed_to_count_pattern, int synchronized_rotating_option){
+		int number_points_needed_to_count_pattern, int synchronized_rotating_option, int interleaved_solve){
 
 	// calibration context -- 0 for rotating, 1 for network version.
 	// these variables technically not needed, but added for readability.
@@ -510,7 +530,7 @@ void MultipleCameraCalibration(int calibration_context, string input_dir, string
 				command = "mkdir " + id_camera_dir;
 				system(command.c_str());
 
-				CCV[i]->FindCornersArucoCharuco(id_camera_dir, src_file, verbose, verbose_dir);
+				CCV[i]->FindCornersArucoCharuco(id_camera_dir, verbose, verbose_dir);
 				CCV[i]->CalibrateRotatingSet(id_camera_dir, number_points_needed_to_count_pattern);
 
 			}	else {
@@ -524,7 +544,7 @@ void MultipleCameraCalibration(int calibration_context, string input_dir, string
 			if (!read_camera_calibration){
 				command = "mkdir " + id_camera_dir;
 				system(command.c_str());
-				CCV[i]->FindCornersCharuco(id_camera_dir, src_file);
+				CCV[i]->FindCornersCharuco(id_camera_dir);
 				CCV[i]->CalibrateBasic(initial_focal_px, zero_tangent_dist, zero_k3,
 						fix_principal_point, id_camera_dir, number_points_needed_to_count_pattern);
 			}	else {
@@ -598,6 +618,7 @@ void MultipleCameraCalibration(int calibration_context, string input_dir, string
 		MC.OutputVariablesWithInitialization( filename, 0);
 	}
 
+
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	/////// Stage 3. Choose exemplar pattern and time; substitute exemplar pattern and time in single and double
 	/// foundational relationships, determine the C values that can be computed.
@@ -621,66 +642,124 @@ void MultipleCameraCalibration(int calibration_context, string input_dir, string
 
 	int solved_var;
 
+
+
 	auto start_stage_4 = std::chrono::high_resolution_clock::now();
+	auto end_stage_4 = std::chrono::high_resolution_clock::now();
 
-	for (int i = 0, vn = MC.NumberVariables(); i < vn && has_some_to_solve == true; i++){
-		has_some_to_solve = MC.IterativelySolveForVariables1(out, solved_var, false);
+	//// THIS IS DONE FOR BOTH INCREMENTAL AND PHASED SOLVE /////////
 
-		if (has_some_to_solve && verbose){
-			filename = verbose_dir + "variables_after_4_" +  ToString<int>(i) + ".txt";
-			MC.OutputVariablesWithInitialization( filename, stage_4_counter);
-		}
 
-		if (!has_some_to_solve){
-			bool can_solve = MC.CanSolveSystem();
-			out_trace << "Can solve this system??? " << can_solve << endl;
+	for (uint i = 0; i < CCV.size(); i++){
+		CCV[i]->SetUpSelectPointsForMinimization();
+	}
 
-			if (can_solve == false){
-				cout << "Finding pairs to solve " << endl;
+	if (network){
+		// strategy: use k-means to estimate clusters in the images, use only k points per image for minimization.
+		MC.SelectKPointsForMinimization(CCV, selectedk);
+	}
 
-				bool solved_pair = MC.SolveClique(out);
+	out_trace << "Selected k " << selectedk << endl;
 
-				if (solved_pair){
-					filename = verbose_dir + "variables_after_4_" +  ToString<int>(i) + "_pair.txt";
-					MC.OutputVariablesWithInitialization( filename, stage_4_counter);
-					has_some_to_solve = true;
+
+	if (interleaved_solve == 0){
+
+		CeresProblemClass CPC(Cali_Quaternion, MC, ceres_out);
+
+
+		for (int i = 0, vn = MC.NumberVariables(); i < vn && has_some_to_solve == true; i++){
+			has_some_to_solve = MC.IterativelySolveForVariables1(out, solved_var, false);
+			// the initializated vars list should keep a record of which vars are solved (or not).
+
+			CPC.AddToProblem(MC, CCV, camera_params, out);
+
+			if (has_some_to_solve && verbose){
+				filename = verbose_dir + "variables_after_4_" +  ToString<int>(i) + ".txt";
+				MC.OutputVariablesWithInitialization( filename, stage_4_counter);
+			}
+
+			if (!has_some_to_solve){
+				bool can_solve = MC.CanSolveSystem();
+				out_trace << "Can solve this system??? " << can_solve << endl;
+
+				if (can_solve == false){
+					cout << "Finding pairs to solve " << endl;
+
+					bool solved_pair = MC.SolveClique(out);
+					CPC.AddToProblem(MC, CCV, camera_params, out);
+
+					if (solved_pair){
+						has_some_to_solve = true;
+
+					}
+
+					if (solved_pair && verbose){
+
+						filename = verbose_dir + "variables_after_4_" +  ToString<int>(i) + "_pair.txt";
+						MC.OutputVariablesWithInitialization( filename, stage_4_counter);
+
+					}
 				}
 			}
 		}
-	}
+
+		MC.V_progressive_solutions.push_back(MC.V_initial);
+
+		// now solve, read back into vars.
+		CPC.SolveWriteBackToMC(MC, ceres_out, 50, true);
+		// don't have one for linear, then not, so just push both.
+
+		MC.V_progressive_solutions.push_back(MC.V_initial);
+
+	}	else {
+
+		CeresProblemClass CPC(Cali_Quaternion, MC, ceres_out);
 
 
-	auto end_stage_4 = std::chrono::high_resolution_clock::now();
+		for (int i = 0, vn = MC.NumberVariables(); i < vn && has_some_to_solve == true; i++){
+			has_some_to_solve = MC.IterativelySolveForVariables1(out, solved_var, false);
+			// the initialized vars list should keep a record of which vars are solved (or not).
 
-	MC.V_progressive_solutions.push_back(MC.V_initial);   /// Store the solutions here
+			CPC.AddToProblem(MC, CCV, camera_params, out);
+			CPC.SolveWriteBackToMC(MC, ceres_out, 4, false);
 
-	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	//////////////////////   STAGE 5 minimization error //////////////////////////////////////////////////////////////////
-	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+			if (has_some_to_solve && verbose){
+				filename = verbose_dir + "variables_after_4_" +  ToString<int>(i) + ".txt";
+				MC.OutputVariablesWithInitialization( filename, stage_4_counter);
+			}
 
-	/// Start here, go through each function, refactor, add k as a parameter.
-	ceres_out << "All vars " << endl;
+			if (!has_some_to_solve){
+				bool can_solve = MC.CanSolveSystem();
+				out_trace << "Can solve this system??? " << can_solve << endl;
 
-	cout << "Begin section 5" << endl;
+				if (can_solve == false){
+					cout << "Finding pairs to solve " << endl;
 
-	if (network){
+					bool solved_pair = MC.SolveClique(out);
+					CPC.AddToProblem(MC, CCV, camera_params, out);
+					CPC.SolveWriteBackToMC(MC, ceres_out, 4, false);
 
-		for (uint i = 0; i < CCV.size(); i++){
-			CCV[i]->SetUpSelectPointsForMinimization();
+					if (solved_pair ){
+						has_some_to_solve = true;
+					}
+
+					if (solved_pair && verbose){
+						filename = verbose_dir + "variables_after_4_" +  ToString<int>(i) + "_pair.txt";
+						MC.OutputVariablesWithInitialization( filename, stage_4_counter);
+					}
+				}
+			}
 		}
 
-		// strategy: use k-means to estimate clusters in the images, use only k points per image for minimization.
-		MC.SelectKPointsForMinimization(CCV, selectedk);
+		// don't have one for linear, then not, so just push both.
+		//MC.V_progressive_solutions.push_back(MC.V_initial);
 
-		out_trace << "Selected k " << selectedk << endl;
+		// now solve, read back into vars.
+		CPC.SolveWriteBackToMC(MC, ceres_out, 40, true);
 
-		MC.MinimizeReprojectionErrorMC(CCV, camera_params, ceres_out, 0, MC.NumberSingles(), false);
-	}	else
-	{
-		MC.MinimizeReprojectionErrorMC(CCV, camera_params, ceres_out, 0, MC.NumberSingles(), true);
+		MC.V_progressive_solutions.push_back(MC.V_initial);
+
 	}
-
-	MC.V_progressive_solutions.push_back(MC.V_initial);
 
 	auto end_stage_5 = std::chrono::high_resolution_clock::now();
 
@@ -690,26 +769,37 @@ void MultipleCameraCalibration(int calibration_context, string input_dir, string
 	///////////////////////////////////////////////////////////////////////////////////////////////
 
 	if (has_ground_truth){
-
 		GTD->ComputeRelativeToExemplar(MC.p_star(), MC.t_star(), output_dir, CCV[0]->P_class);
 
 		MC.WriteSolutionAssessError(output_dir, camera_directories, CCV, -2, GTD, rotating, true, camera_size, track_size);
 		MC.WriteSolutionAssessError(output_dir, camera_directories, CCV, -1, GTD, rotating, true, camera_size, track_size);
 
-		MC.ReconstructionAccuracyErrorAndWrite(reconstructed_patterns_dir, -2, CCV, camera_params, rae_ceres_out, GTD);
-		MC.ReconstructionAccuracyErrorAndWrite(reconstructed_patterns_dir, -1, CCV, camera_params, rae_ceres_out, GTD);
+		MC.ReconstructionAccuracyErrorAndWriteI(reconstructed_patterns_dir, -2, CCV, camera_params, rae_ceres_out, GTD);
+		MC.ReconstructionAccuracyErrorAndWriteI(reconstructed_patterns_dir, -1, CCV, camera_params, rae_ceres_out, GTD);
 
-		MC.AssessCamerasWRTGroundTruth(GTD, 0);
-		MC.AssessCamerasWRTGroundTruth(GTD, 1);
+		if (!interleaved_solve){
+
+			MC.AssessCamerasWRTGroundTruth(GTD, 0);
+			MC.AssessCamerasWRTGroundTruth(GTD, 1);
+		}	else {
+			MC.AssessCamerasWRTGroundTruth(GTD, 0);
+		}
 
 	}
 
-	// initial solution
-	MC.ReconstructionAccuracyErrorAndWrite(reconstructed_patterns_dir, 0, CCV, camera_params, rae_ceres_out, GTD);
 
+	if (!interleaved_solve){
+		// initial solution
+		MC.ReconstructionAccuracyErrorAndWriteI(reconstructed_patterns_dir, 0, CCV, camera_params, rae_ceres_out, GTD);
 
-	// solution from solving reprojection error.
-	MC.ReconstructionAccuracyErrorAndWrite(reconstructed_patterns_dir, 1, CCV, camera_params, rae_ceres_out, GTD);
+		// solution from solving reprojection error.
+		MC.ReconstructionAccuracyErrorAndWriteI(reconstructed_patterns_dir, 1, CCV, camera_params, rae_ceres_out, GTD);
+
+	}	else {
+
+		MC.ReconstructionAccuracyErrorAndWriteI(reconstructed_patterns_dir, 2, CCV, camera_params, rae_ceres_out, GTD);
+
+	}
 
 	rae_ceres_out.close();
 
@@ -726,17 +816,17 @@ void MultipleCameraCalibration(int calibration_context, string input_dir, string
 
 	out << "Times, seconds" << endl;
 	out << "    Load, internal/external cali ... " << std::chrono::duration_cast<std::chrono::seconds>(end_find_id_calibrate - start_timer).count()
-																																																											<< " seconds "<< endl;
+																																																																																							<< " seconds "<< endl;
 	out << " Set up cali structure           ... " << std::chrono::duration_cast<std::chrono::seconds>(start_stage_4 - end_find_id_calibrate).count()
-																																																															<< " seconds "<< endl;
+																																																																																											<< " seconds "<< endl;
 	out << "Stage 4                           ... " << std::chrono::duration_cast<std::chrono::seconds>(end_stage_4 - start_stage_4).count()
-																																																															<< " seconds "<< endl;
+																																																																																											<< " seconds "<< endl;
 	out << "Stage 5                           ... " << std::chrono::duration_cast<std::chrono::seconds>(end_stage_5 - end_stage_4).count()
-																																																															<< " seconds "<< endl;
+																																																																																											<< " seconds "<< endl;
 	out << "Total, load and everything ... " <<   std::chrono::duration_cast<std::chrono::seconds>(end_stage_5 - start_timer).count()
-																																																																	<< " seconds "<< endl;
+																																																																																													<< " seconds "<< endl;
 	out << "MetaTotal, without load+internal/external cali, just network cali ... " <<   std::chrono::duration_cast<std::chrono::seconds>(end_stage_5 - end_find_id_calibrate).count()
-																																																																			<< " seconds "<< endl;
+																																																																																															<< " seconds "<< endl;
 
 
 	out << "Times,milliseconds" << endl;
@@ -755,20 +845,23 @@ void MultipleCameraCalibration(int calibration_context, string input_dir, string
 
 	out << "Times, minutes" << endl;
 	out << "Total, load and everything ... " <<   std::chrono::duration_cast<std::chrono::minutes>(end_stage_5 - start_timer).count()
-																																																																				<< " minutes "<< endl;
+																																																																																																<< " minutes "<< endl;
 	out << "MetaTotal, without load+internal/external cali, just network cali ... " <<   std::chrono::duration_cast<std::chrono::minutes>(end_stage_5 - end_find_id_calibrate).count()
-																																																																					<< " minutes "<< endl;
+																																																																																																	<< " minutes "<< endl;
 
-	MC.WriteSolutionAssessError(output_dir, camera_directories, CCV, 0, GTD, rotating, true, camera_size, track_size);
-
-
-	MC.WriteSolutionAssessError(output_dir, camera_directories, CCV, 1, GTD, rotating, true, camera_size, track_size);
+	if (!interleaved_solve){
+		MC.WriteSolutionAssessError(output_dir, camera_directories, CCV, 0, GTD, rotating, true, camera_size, track_size);
+		MC.WriteSolutionAssessError(output_dir, camera_directories, CCV, 1, GTD, rotating, true, camera_size, track_size);
+	}	else {
+		MC.WriteSolutionAssessError(output_dir, camera_directories, CCV, 2, GTD, rotating, true, camera_size, track_size);
+	}
 
 
 	out.close();
 	ceres_out.close();
 
 	filename = output_dir + "total_results.txt";
+
 	MC.OutputRunResults(filename);
 
 
@@ -789,7 +882,7 @@ void MultipleCameraCalibration(int calibration_context, string input_dir, string
 
 	delete [] camera_params;
 
-	if (has_ground_truth){
+	if (GTD != 0){
 		delete GTD;
 	}
 

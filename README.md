@@ -1,8 +1,10 @@
 # calico
 
-CALICO: a method for calibrating asynchronous camera networks and/or multicamera systems, version 1.0. November 2019.
+CALICO: a method for calibrating asynchronous camera networks and/or multicamera systems, version 1.1. April 2020 (Original release November 2019).
 
-Changelog: Docker image added March 2020.
+Changelog: 
+- Docker image added March 2020.
+- Added incremental method as default, and another overhaul, April 2020.
 
 Roadmap
 - [Contact](#contact)
@@ -58,6 +60,16 @@ Tabb, Amy, & Feldmann, Mitchell J. (2019). Data and Code from: Calibration of As
 ````
 
 If you use this code in project that results in a publication, please cite at a minimum the paper above, and best practice would be to cite the paper and the dataset.  Otherwise, there are no restrictions in your use of this code.  However, no guarantees are expressed or implied.
+
+## Changes from published version
+
+The code has been updated to use an interleaved solve of the multi-camera calibration problem.  Whereas before, steps 4 and 5 of the arXiv paper were:
+
+4: Find the initial solution set V0 by iteratively solving first individual, and then pairwise uninitialized variables found at prior iterations (using a closed-form method), section 4.4 of the paper.
+
+5: Find  the  final  solution  set V by  refining  the  estimated HTMs through reprojection error minimization (i.e. Levenberg-Marquardt algorithm), section 4.5 of the paper.
+
+This version of calico is still available, using the `--non-incremental` flag.  Now, however, the default setting is to solve the problem incrementally for variables: a closed-form solution is used as an initial solution for non-linear minimization of reprojection error through Levenberg-Marquardt.  For some datasets, the result is very similar to the prior result.  For others, the new approach is better and for other datasets we are working on, the new approach works much better.  
 
 ## Docker release
 
@@ -116,7 +128,7 @@ And from here on out, we issue commands from this Docker container, which is wri
 
 ## Dependencies
 
-This code uses the Ceres, OpenCV 4.0, and Eigen libraries.  Ceres *can* be used without cmake, but is best used with cmake.  I've included instructions for building with cmake, and the specific OpenCV libraries needed, as well as what OpenCV 3.x versions have worked without alteration.
+This code uses the Ceres, OpenCV 4.0, OpenMP, and Eigen libraries.  Ceres *can* be used without cmake, but is best used with cmake.  I've included instructions for building with cmake, and the specific OpenCV libraries needed, as well as what OpenCV 3.x versions have worked without alteration.
 
 [Ceres](http://ceres-solver.org/)
 
@@ -130,11 +142,11 @@ We are not responsible for whatever it takes to get Ceres to build; but advise t
 - `opencv_aruco` 
 - `opencv_calib3d`
 
-[OpenMP](https://www.openmp.org/) OpenMP is used to parallelize some sections of the individual camera calibration section.  On Ubuntu, to install the library, run `sudo apt-get install libgomp1` at a terminal.   Note that the use of OpenMP is optional, and only speeds up some image loading operations.  Instructions to compile and link without OpenMP are given in the [Building](#building) section.  Evidently, OpenMP support on MacOS is ... difficult to accomplish.
+[OpenMP](https://www.openmp.org/) OpenMP is used to parallelize some sections of the individual camera calibration section.  On Ubuntu, to install the library, run `sudo apt-get install libgomp1` at a terminal.   **Now OpenMP is required.**  Evidently, OpenMP support on MacOS is ... difficult to accomplish.  If you have notes on getting this to work on MacOs, let me know so that I can add them to this document.  If you cannot get OpenMP working and you have a Mac (or Windows), I suggest using the Docker container to run calico.
 
 [tex-live](https://tug.org/texlive/) If you enable the `--verbose` option for CALICO, some of the output will be written to latex files, and then .pdfs will be generated.  To get this all to work, the `pdflatex` needs to be available.  On Ubuntu again, run `sudo apt-get install texlive-latex-base` to get started.
 
-[exiftool](https://owl.phy.queensu.ca/~phil/exiftool/) This is only needed for the `--rotate` case, which is specific to our laboratory.  I doubt that other users will need it, but if you are running the `rot1` and `rot2` datasets, you will need this.  On Ubunutu, install with `sudo apt-get install exiftool`. 
+[exiftool](https://owl.phy.queensu.ca/~phil/exiftool/) This is only needed for the `--rotate` case, which is specific to our laboratory.  I doubt that other users will need it, but if you are running the `rot1` and `rot2` datasets, you will need this.  On Ubuntu, install with `sudo apt-get install exiftool`. 
 
 This code has been tested on Ubuntu 16.04 and Ubuntu 18.04.  You are welcome to convert it to Windows, but I have not.  While OpenCV is available from distribution repositories, my long experience with it is has always been to build from the source to get the best results.
 
@@ -156,19 +168,6 @@ These instructions will walk you through cloning to configuring with cmake, and 
 
 Both work and those versions are compatible with CALICO. 
 
-If you do not want to use OpenMP, then within the `Includes.hpp` file, comment out
-
-````c++
-#include <parallel/algorithm>
-#include <omp.h>
-````
-
-and in the `CMakeLists.txt` file, comment (with # ) the first `set(CMAKE_CXX_FLAGS} ...` line and uncomment the second one.  
-
-Still within `CMakeLists.txt`, comment the first `target_link_libraries(...` and uncomment the second one.  
-
-I have set up those commands such that calico will not be compiled or linked with OpenMP.  That's it!
-
 5. Configure with cmake.  Don't have cmake? (`sudo apt-get install cmake`). Then from the build folder, you can use any of the following four options below: 
 
 - `cmake ../src`  (basic)
@@ -184,7 +183,7 @@ in my case on one machine, this was:
 
 `-DCMAKE_PREFIX_PATH=/usr/local/opencv41/lib/cmake/opencv4/`
 
-where `/usr/local/opencv41/lib/cmake/opencv4/` is the directory containing `OpenCVConfig.cmake`.  Of course, you will substitute whatever the approrpriate directory returned from  `locate OpenCVConfig.cmake` was.
+where `/usr/local/opencv41/lib/cmake/opencv4/` is the directory containing `OpenCVConfig.cmake`.  Of course, you will substitute whatever the appropriate directory returned from  `locate OpenCVConfig.cmake` was.
 
 
 6. Then, you can either import the project to Eclipse (if you used the last option), or build from there, or type `make`.   If the everything compiled and linked, and you have an executable named `calico`, you are ready to go. 
@@ -202,19 +201,22 @@ ESSENTIAL FUNCTIONALITY -------------------
 --create-patterns             No arguments, write aruco image patterns from a specification file.
 --network                     No arguments, indicates that this dataset is a camera network or multicamera system.
 --rotating                    No arguments, indicates that this dataset is the rotating type with background.
+--synch-rotate                No arguments, indicates the where there are multiple cameras in the rotating case, that they are synchronized.  Default is false. (not synchronized).
 --ground-truth                No arguments. The ground truth calibration information is available.
+--num-threads                 Number of threads to use.  Default is # returned by omp_get_max_threads();, currently = 24
+--non-incremental             No arguments.  Set the solving method to use the linear the non-linear match minimization, instead of the default incremental linear/non-linear reprojection error algo.
 
 DIRECTORIES AND PATHS ----------------------- 
 --input=[STRING]              Mandatory, has to be a directory.
 --output=[STRING]             Mandatory, has to be a directory.
---src-dir=[STRING]            Directory where the source code resides relative to where the executible is being run. 
+--src-dir=[STRING]            Directory where the source code resides relative to where the executable is being run. 
  Specifically, the location of 'detector_params.yml'  Default is ../src/ . 
 
 CAMERA CALIBRATION OPTIONS ---------------------------
 --only-camera-cali            No arguments, only perform individual camera calibration, but not network calibration.
 --read-camera-cali            No arguments, read-previously-computed camera calibration from file.  It should be in the output directory.
---zero-tangent                No arguments. In the camera calibration part, sets the tangential components of radial distortion (p1, p2) to zero.
---zero-k3                     No arguments. In the camera calibration part, sets the 3rd radial distortion k value to zero.
+--non-zero-tangent            No arguments. In the camera calibration part, sets the tangential components of radial distortion (p1, p2) to non-zero.
+--non-zero-k3                 No arguments. In the camera calibration part, sets the 3rd radial distortion k value to non-zero.
 --fix-pp                      No arguments. In the camera calibration part, sets the principal point to the image center. 
 --focal-px=[float]            Initial focal length in pixels for the camera.  Default is max dimension * 1.2 
 
@@ -228,14 +230,13 @@ OPTIONS ON NUMBER OF IMAGES READ/USED; NUMBER OF POINTS USED FOR NETWORK -------
 DISPLAY -----------
 --camera-size=[float]         Float argument.  Specifies the size of the cameras written, default is 40.
 --track-size=[float]          Float argument.  Specifies the size of the track size written, default is 0.5 .
-All other arguments are ignored.
 ````
 
 Assuming you've downloaded some of the datasets from Zenodo [http://doi.org/10.5281/zenodo.3520866](http://doi.org/10.5281/zenodo.3520866), the arguments used to run a sampling is here:
 
-sim1:  `./calico --network --k=8 --zero-tangent --zero-k3  --input=/home/username/data-calico/sim1/base/ --output=/home/username/data-calico/sim1/result/ --camera-size=80 --track-size=8 --ground-truth --verbose`
+sim1:  `./calico --network --k=8 --input=/home/username/data-calico/sim1/base/ --output=/home/username/data-calico/sim1/result/ --camera-size=80 --track-size=8 --ground-truth --verbose`
 
-mult1: `./calico --network --k=8 --zero-tangent --zero-k3  --input=/home/username/data-calico/mult1/base/ --output=/home/username/data-calico/mult1/result/ --camera-size=40 --track-size=5 --verbose`   
+mult1: `./calico --network --k=8 --input=/home/username/data-calico/mult1/base/ --output=/home/username/data-calico/mult1/result/ --camera-size=40 --track-size=5 --verbose`   
   
 rot1: `./calico --rotating --input=/home/username/data-calico/rot1/base/ --output=/home/username/data-calico/rot1/result/ --camera-size=40 --track-size=5 --verbose`  
 
@@ -277,7 +278,7 @@ root@d208fe4482b5:/docker_dir# mkdir results/
 Then, we can call calico.  Note that the `--src-dir=[STRING]` flag is not needed; the paths have already been set to the defaults within the Docker image. For example using the `sim-1-base` dataset:
 
 ````
-root@d208fe4482b5:/docker_dir# calico --input sim-1-base/ --output results/ --zero-tangent --zero-k3 --network
+root@d208fe4482b5:/docker_dir# calico --input sim-1-base/ --output results/ --network
 ````
 
 
@@ -503,11 +504,14 @@ Camera and track sizes can be adjusted to increase visability through the `--cam
 
 ## Visualization of reconstructed calibration patterns
 
-Reconstructed pattterns are written in the `reconstructed-patterns` directory.
+Reconstructed patterns are written in the `reconstructed-patterns` directory.
 
 RAE, reconstruction accuracy error, is computed assuming that the pattern has been transformed back to the world coordinate system.  In the camera calibration literature, and in the conventions I used in creating CALICO, the world coordinate system is at (0,0,0) and the pattern's points are distributed on the X-Y plane.  
 
-To assess the difference between the ideal world coordinate system (as defined by a pattern) and the computed transformation, there are 3D model files that again oe can load in their 3D model viewer of choice.   `world-ideal_patternNUMBER.ply` is the coordinate system as definated by the calibration pattern, which  `world-initial-patternNUMBER.ply` is the estimate produced by step 4 of CALICO.  `world-minimization1-patternNUMBER.ply` is the estimate produced by step 5 of CALICO.  Throughout, `NUMBER` is the pattern number.  If the pattern transformation is not estimated, which does happen, the transformation will be the identity.
+To assess the difference between the ideal world coordinate system (as defined by a pattern) and the computed transformation, there are 3D model files that again one can load in their 3D model viewer of choice.   
+- `world-ideal_patternNUMBER.ply` is the coordinate system as defined by the calibration pattern, which  
+- `world-initial-patternNUMBER.ply` is the estimate produced by step 4 of CALICO.  
+- `world-minimization1-patternNUMBER.ply` is the estimate produced by step 5 of CALICO.  Throughout, `NUMBER` is the pattern number.  If the pattern transformation is not estimated, which does happen, the transformation will be the identity.
 
 (Here's a listing of files for the sim1 dataset.)
 
@@ -534,7 +538,9 @@ world-minimization1-pattern2.ply
 world-minimization1-pattern3.ply
 ````
 
-Then, to view the calibration rig, where the patterns are arranged relative to each other, see the `at-P-initial-patternNUMBER.ply` and `at-P-minimization1-patternNUMBER.ply` files, for the step 4 and step 5 results, respectively.  
+Then, to view the calibration rig, where the patterns are arranged relative to each other, see the `at-P-initial-patternNUMBER.ply` and `at-P-minimization1-patternNUMBER.ply` files, for the step 4 and step 5 results, respectively. 
+
+If the `--incremental` flag was used, you will see `at-P-incremental-patternNUMBER.ply` instead. 
 
 ## Listing of foundational relationships
 
