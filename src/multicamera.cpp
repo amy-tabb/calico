@@ -88,6 +88,8 @@ MCcali::MCcali(vector<CameraCali*>& CCV, PatternsCreated& P_class, int max_numbe
 
 	// need to select the exemplar pattern and time using CCV.
 	// pattern -- find the pattern viewed by the most cameras.
+	// synchronized rot option is just a more straightforward way of representing the 'network' versus 'rotating' cases,
+	// b/c there is some ambiguity there.
 	synch_rot_option = synchronized_rotating_option;
 	number_images = max_number_images_to_use;
 
@@ -132,6 +134,7 @@ MCcali::MCcali(vector<CameraCali*>& CCV, PatternsCreated& P_class, int max_numbe
 		exit(1);
 	}
 
+
 	if (synch_rot_option == true){ // default case
 		for (int c_count = 0; c_count < cn; c_count++){
 			for (int i = 0, in = tn; i < in; i++){
@@ -157,10 +160,6 @@ MCcali::MCcali(vector<CameraCali*>& CCV, PatternsCreated& P_class, int max_numbe
 				}
 			}
 		}
-
-
-
-
 	}
 
 	// which one has the most observations?
@@ -192,6 +191,7 @@ MCcali::MCcali(vector<CameraCali*>& CCV, PatternsCreated& P_class, int max_numbe
 
 
 	out << "Max number of occurrences for t " << max_value << endl << endl;
+
 
 	out << "p_star and t_star " << p_s << " " << t_s << endl;
 	out << "cn " << cn << endl;
@@ -260,6 +260,7 @@ void MCcali::SubstitutePTstar(string write_dir, bool write_docs, int iter){
 
 	if (write_docs) {WriteLatex(write_dir, "doc-after-stage3"); }
 }
+
 
 
 void MCcali::InitializeNumberOccurrences(){
@@ -414,7 +415,6 @@ Matrix3d ExtractRotationMatrix(Matrix4d& M){
 		for (int c = 0; c < 3; c++){
 			R(r, c) = M(r, c);
 		}
-		//(r, 3) = tau(r);
 	}
 
 	return R;
@@ -431,6 +431,7 @@ void ExtractRotationTranslationMatrix(Matrix4d& M, Matrix3d& R, MatrixXd& t){
 	}
 }
 
+
 MatrixXd KroneckerProduct(Matrix3d& M1, Matrix3d& M2){
 
 	int rowsa = M1.rows(); int rowsb = M2.rows();
@@ -440,20 +441,28 @@ MatrixXd KroneckerProduct(Matrix3d& M1, Matrix3d& M2){
 
 	M3.setZero();
 
-	for (int r0 = 0; r0 < rowsa; r0++){
-		for (int c0 = 0; c0 < colsa; c0++){
-			for (int r1 = 0; r1 < rowsb; r1++){
-				for (int c1 = 0; c1 < colsb; c1++){
+	double item = 0;
+	Matrix3d B;
+	for (int r0 = 0; r0 < 3; r0++){
+		for (int c0 = 0; c0 < 3; c0++){
 
-					M3(r0*rowsb + r1, c0*colsb + c1 ) = M1(r0, c0)*M2(r1, c1);
+			item = M1(r0, c0);
+
+			B = item*M2;
+
+			for (int r1 = 0; r1 < 3; r1++){
+				for (int c1 = 0; c1 < 3; c1++){
+					M3(r0*3 + r1, c0*3 + c1) = B(r1, c1);
 				}
 			}
 		}
 	}
 
+
 	return M3;
 
 }
+
 
 MatrixXd KroneckerProduct(MatrixXd& M1, MatrixXd& M2){
 
@@ -468,8 +477,6 @@ MatrixXd KroneckerProduct(MatrixXd& M1, MatrixXd& M2){
 		for (int c0 = 0; c0 < colsa; c0++){
 			for (int r1 = 0; r1 < rowsb; r1++){
 				for (int c1 = 0; c1 < colsb; c1++){
-
-					//cout << "r, c " << r0*rowsb + r1 << ", " << c0*colsb + c1 << endl;
 					M3(r0*rowsb + r1, c0*colsb + c1 ) = M1(r0, c0)*M2(r1, c1);
 				}
 			}
@@ -480,8 +487,6 @@ MatrixXd KroneckerProduct(MatrixXd& M1, MatrixXd& M2){
 
 }
 
-
-// this is in newmat notation.
 void ShahKroneckerProduct(vector<Matrix4d>& As, vector<Matrix4d>& Bs, Matrix4d& X, Matrix4d& Z, std::ofstream& out){
 
 	X.setZero();  Z.setZero();
@@ -504,7 +509,7 @@ void ShahKroneckerProduct(vector<Matrix4d>& As, vector<Matrix4d>& Bs, Matrix4d& 
 
 	ofstream tempout;
 	string filename;
-	//int counter =0 ;
+
 	for (int i = 0; i < N; i++){
 
 		Ra = ExtractRotationMatrix(As[i]);
@@ -522,7 +527,7 @@ void ShahKroneckerProduct(vector<Matrix4d>& As, vector<Matrix4d>& Bs, Matrix4d& 
 
 		T = T + KP;
 	}
-	//	SVD(T, D, U, V);
+
 	JacobiSVD<MatrixXd> svd(T, ComputeThinU | ComputeThinV);
 
 	MatrixXd V = svd.matrixV();  MatrixXd U = svd.matrixU();
@@ -660,6 +665,8 @@ void ShahKroneckerProduct(vector<Matrix4d>& As, vector<Matrix4d>& Bs, Matrix4d& 
 
 }
 
+
+
 void MCcali::UpdateSinglesOpenFlag(){
 	vector<int> position_init_map(4, 0);
 
@@ -709,6 +716,10 @@ bool MCcali::IterativelySolveForVariables1(ofstream& out, int& solved_var, bool 
 		equation_to_solve[i] = false;
 	}
 
+	vector<double> average_var_uncertainity_score(vn, 0);
+
+
+	// prior approach using frequency
 	for (int i = 0; i < an; i++){
 		if (singles_open[i] == true){
 			number_uninitialized = 0;
@@ -755,24 +766,27 @@ bool MCcali::IterativelySolveForVariables1(ofstream& out, int& solved_var, bool 
 		cout << "singles open, doubles open " << number_singles_open << ", " << number_doubles_open << endl;
 		cout << "Number of equations that can be solved " << number_equations_to_solve << endl;
 
-		cout << "Equations to solve " << endl;
+		out << "Equations to solve " << endl;
 		for (int i = 0; i < an; i++){
 			if (equation_to_solve[i] == true){
-				cout << i << endl;
+				out << i << endl;
 			}
 		}
 
-		cout << "Var counts " << endl;
+		out << "Var counts " << endl;
 		for (int i= 0; i < vn; i++){
 			if (V_number_occurrences[i] > 0){
-				cout << "V " << i << " and number " << V_number_occurrences[i] << endl;
+				out << "V " << i << " and number " << V_number_occurrences[i] << endl;
 			}
 		}
 	}
 
 	if (number_equations_to_solve > 0){
 		// we can solve for one of these variables ...
-		int var_to_solve = SelectVarToIterativelySolve();
+
+		int var_to_solve = -1;
+
+		var_to_solve = SelectVarToIterativelySolve();
 
 		VAR_TYPE VT = ReturnVarType(var_to_solve);
 		if (verbose){
@@ -807,7 +821,6 @@ bool MCcali::IterativelySolveForVariables1(ofstream& out, int& solved_var, bool 
 		return false;
 
 	}
-
 
 }
 
@@ -986,11 +999,8 @@ bool MCcali::SolveClique(std::ofstream& out){
 		out << "second var case is a time variable." << endl;
 	}
 
-
-
 	vector<Matrix4d> Arwhec;
 	vector<Matrix4d> Brwhec;
-
 
 	for (int i = 0, number_frs = NumberSingles(); i < number_frs; i++){
 
@@ -1061,8 +1071,6 @@ bool MCcali::SolveClique(std::ofstream& out){
 
 }
 
-
-
 void MCcali::MinimizeReprojectionErrorMC(vector<CameraCali*>& CCV, double* camera_params, ofstream& out,
 		int start_id, int end_id,
 		bool use_all_points_present){
@@ -1072,16 +1080,26 @@ void MCcali::MinimizeReprojectionErrorMC(vector<CameraCali*>& CCV, double* camer
 	int t_ex_graph = t_star() + cn + pn;
 	int p_ex_graph = p_star() + cn;
 
-	for (int i = 0; i < NumberVariables(); i++){
-		if (V_has_initialization[i] == false){
-			//minimize_bit_vector[i] = false;
+	// todo check this -- since minimize --- rewrite to make better.
+	//	for (int i = 0; i < NumberVariables(); i++){
+	//		if (V_has_initialization[i] == false){
+	//
+	//
+	//		}	else {
+	//			if (i == t_ex_graph || i == p_ex_graph){
+	//				minimize_bit_vector[i] = false;
+	//			}
+	//		}
+	//
+	//	}
 
-		}	else {
+
+	for (int i = 0; i < NumberVariables(); i++){
+		if (V_has_initialization[i] == true){
 			if (i == t_ex_graph || i == p_ex_graph){
 				minimize_bit_vector[i] = false;
 			}
 		}
-
 	}
 
 	MinimizeReprojectionError(*this, CCV, camera_params, minimize_bit_vector,  out,
@@ -1099,7 +1117,7 @@ double StdDeviation(vector<double>& v, double m)
 	return sqrt(E/n);
 }
 
-void MCcali::ReconstructionAccuracyErrorAndWrite(string write_dir, int current_item, vector<CameraCali*>& CCV,
+void MCcali::ReconstructionAccuracyErrorAndWriteI(string write_dir, int current_item, vector<CameraCali*>& CCV,
 		double* camera_params, ofstream& out, GroundTruthData* GTD){
 
 	// input checking
@@ -1124,6 +1142,9 @@ void MCcali::ReconstructionAccuracyErrorAndWrite(string write_dir, int current_i
 	case 1: {
 		descriptor = "minimization1";
 	} break;
+	case 2: {
+		descriptor = "incremental";
+	} break;
 	}
 
 
@@ -1141,6 +1162,9 @@ void MCcali::ReconstructionAccuracyErrorAndWrite(string write_dir, int current_i
 	} break;
 	case 1: {
 		vector_to_use = V_progressive_solutions[1];
+	} break;
+	case 2: {
+		vector_to_use = V_progressive_solutions[0];
 	} break;
 	default: {
 		cout << "A type in Write Solutions chosen that is not implemented .... " << current_item << endl;
@@ -1210,14 +1234,14 @@ void MCcali::ReconstructionAccuracyErrorAndWrite(string write_dir, int current_i
 	double mu = summed_error/double(sample_n);
 
 	number_valid_points_rae_strict = sample_n;
-	average_rae_strict.push_back(mu);
+	average_rae_ba.push_back(mu);
 
 	double stddev = StdDeviation(norms, mu);
-	stddev_rae_strict.push_back(stddev);
+	stddev_rae_ba.push_back(stddev);
 
 	std::sort(norms.begin(), norms.end());
 	double median = norms[norms.size()/2];
-	median_rae_strict.push_back(median);
+	median_rae_ba.push_back(median);
 
 	out << "summed error is " << summed_error << endl;
 	out << "Number valid points " << n << " out of " << number_pts << endl;
@@ -1306,14 +1330,13 @@ void MCcali::ReconstructionAccuracyErrorAndWrite(string write_dir, int current_i
 				}
 
 				current_points.clear();
-
 			}
 		}
 
 	}
 
 	// write patterns as computed by the optimization
-	if (current_item == 0 || current_item == 1){
+	if (current_item == 0 || current_item == 1 || current_item == 2){
 		// write the pattern as computed w/ the pattern vars.
 		PatternsCreated* P = CCV[0]->P_class;
 		Vector4d xprior;  xprior.setConstant(1);
@@ -1321,7 +1344,6 @@ void MCcali::ReconstructionAccuracyErrorAndWrite(string write_dir, int current_i
 		int pattern_graph_index;
 
 		{
-
 			for (int p = 0; p< NumberPatterns(); p++){
 				filename = write_dir + "at-P-" + descriptor + "-pattern"+ ToString<int>(p) + ".ply";
 
@@ -1357,11 +1379,9 @@ void MCcali::ReconstructionAccuracyErrorAndWrite(string write_dir, int current_i
 				}
 
 				current_points.clear();
-
 			}
 		}
 	}
-
 
 	// update
 	Points_progressive_solutions_strict.push_back(reconstructed_points);
@@ -1468,7 +1488,6 @@ int MCcali::BuildCostFunctionAndGraphWithTestAndDegenerateInitialize(vector<Came
 	for (int a_count = 0; a_count < an; a_count++){
 		/// camera var index;
 		singles.push_back(single_relationship_container(A_camera_indices[a_count]));
-		//cout << "Eq. " << a_count << " camera " << A_camera_indices[a_count] << endl;
 		// A var index
 		singles[a_count].rhs[0]= a_count;
 		/// P var index
@@ -1590,8 +1609,6 @@ void MCcali::WriteASide(vector<int>& side, ofstream& out, bool write_exemplars){
 	if (is_exemplar_p && !write_exemplars){
 		is_exemplar_p = !is_exemplar_p;
 	}
-
-
 
 	has_p = !is_exemplar_p && (p_superscript >= 0); // p_star is in p-space OR this has been factored out..
 
@@ -1765,7 +1782,6 @@ void MCcali::WriteLatex(string write_dir, string descriptor, bool write_exemplar
 
 	out << "p-star is " << p_star() << " and t-star is " << t_star() << endl;
 
-
 	for (int a_count = 0; a_count < an; a_count++){
 		if (a_count % max_number_per_column == 0){
 			if (a_count > 0){
@@ -1777,17 +1793,14 @@ void MCcali::WriteLatex(string write_dir, string descriptor, bool write_exemplar
 
 		// go through this -- is there a pattern AND a time?
 		c_graph_index = singles[a_count].lhs;
-		//cout << c_graph_index << endl;
 		if (c_graph_index >= 0){
-			//c_superscript = A_camera_indices[c_graph_index];
+
 			c_superscript = V_index[c_graph_index];
 		}	else {
 			cout << "Major error!  camera matrix on a single is empty." << endl;
 			exit(1);
 		}
 
-
-		//if (V_has_initialization[c_graph_index] && diff_initialized){
 		if (V_has_initialization[c_graph_index]){
 			out << "^{" << c_superscript << "}\\mathds{C} =& ";
 		}	else {
@@ -1849,8 +1862,6 @@ void MCcali::WriteLatex(string write_dir, string descriptor, bool write_exemplar
 		}
 	}
 
-
-
 	out << "\\end{document}" << endl;
 	out.close();
 
@@ -1858,9 +1869,6 @@ void MCcali::WriteLatex(string write_dir, string descriptor, bool write_exemplar
 	system(command.c_str());
 
 }
-
-
-
 
 void MCcali::InitializeNumberOccurrencesAndInitialization(){
 	for (int i = 0; i < an; i++){
@@ -2099,7 +2107,6 @@ void MCcali::WriteSimulatedCamerasForRotatingCase(string write_directory, string
 					CCV[0]->rows, CCV[0]->cols, filename, camera_size);
 		}
 	}
-
 }
 
 
@@ -2119,8 +2126,6 @@ void MCcali::WriteCalibrationFileForSimulatedCamerasAtAllTimes(string write_dire
 	Matrix4d ProposedMatprior;
 
 	Matrix4d currentPair;
-
-	//int number_time_this_camera;
 
 	// don't reduce size, testing.
 	double size_reduction  = 1;
@@ -2173,21 +2178,6 @@ void MCcali::WriteCalibrationFileForSimulatedCamerasAtAllTimes(string write_dire
 			cv::Mat rotMatrix = cv::Mat::eye(3, 3, CV_64F);
 
 			cv::Mat tMatrix = cv::Mat::zeros(3, 1, CV_64F);
-
-			Mat im = imread(CCV[i]->im_names[0].c_str(), IMREAD_COLOR);
-
-			Size image_size = Size(im.cols, im.rows);
-
-			cv::Mat view, rview, map1, map2;
-
-			cv::initUndistortRectifyMap(cameraMatrix, distCoeffs, cv::Mat(),
-					cv::getOptimalNewCameraMatrix(cameraMatrix, distCoeffs, image_size, 1, image_size, 0),
-					image_size, CV_16SC2, map1, map2);
-
-			Size si;
-
-			si.width = im.cols/size_reduction;
-			si.height = im.rows/size_reduction;
 
 			for (int r = 0; r < 3; r++){
 				for (int c = 0; c < 3; c++){
@@ -2374,9 +2364,6 @@ GroundTruthData::GroundTruthData(string input){
 	in.close();
 }
 
-
-
-
 void GroundTruthData::ComputeRelativeToExemplar(int p_star, int t_star, string outputdir, PatternsCreated* P_class){
 
 	string filename;
@@ -2539,6 +2526,9 @@ void MCcali::WriteSolutionAssessError(string write_directory, vector<string>& ca
 	case 1: {
 		vector_to_use = V_progressive_solutions[1];
 	} break;
+	case 2: {
+		vector_to_use = V_progressive_solutions[0];
+	} break;
 	default: {
 		cout << "A type in Write Solutions chosen that is not implemented .... " << type << endl;
 		cout << "Line " << __LINE__ << " in " << __FILE__ << endl;
@@ -2559,6 +2549,9 @@ void MCcali::WriteSolutionAssessError(string write_directory, vector<string>& ca
 	}	break;
 	case 1: {
 		descriptor = "minimization1";
+	} break;
+	case 2: {
+		descriptor = "incremental";
 	} break;
 	}
 
@@ -2611,6 +2604,9 @@ void MCcali::WriteSolutionAssessError(string write_directory, vector<string>& ca
 	case 1:{
 		cam_color << 0, 158, 115;
 	} break;
+	case 2:{
+		cam_color << 0, 158, 0;
+	} break;
 	}
 
 	for (int i = 0; i < NumberCameras(); i++){
@@ -2626,7 +2622,7 @@ void MCcali::WriteSolutionAssessError(string write_directory, vector<string>& ca
 			create_camera(GTD->InternalMatrices[i], vector_to_use[i], camera_size, cam_color(0), cam_color(1),
 					cam_color(2), CCV[i]->rows, CCV[i]->cols, filename);
 		} break;
-		case 0: {
+		default: {
 			if (V_has_initialization[i]){
 				// rows and cols are empty
 				create_camera(CCV[i]->internal_parameters, vector_to_use[i], camera_size, cam_color(0), cam_color(1),
@@ -2635,16 +2631,7 @@ void MCcali::WriteSolutionAssessError(string write_directory, vector<string>& ca
 				externals.push_back(vector_to_use[i]);
 			}
 		} break;
-		case 1: {
-			if (V_has_initialization[i]){
-				// rows and cols are empty
-				create_camera(CCV[i]->internal_parameters, vector_to_use[i], camera_size, cam_color(0), cam_color(1),
-						cam_color(2), CCV[i]->rows, CCV[i]->cols, filename);
-				internals.push_back(CCV[i]->internal_parameters);
-				externals.push_back(vector_to_use[i]);
-			}
 
-		} break;
 		}
 
 	}
@@ -2737,15 +2724,27 @@ void MCcali::WriteSolutionAssessError(string write_directory, vector<string>& ca
 	write_file = write_directory + current_dir + "/A_est.txt";
 	out.open(write_file.c_str());
 
+
+
 	////////////////////////////////// Reprojection error //////////////////////////////////////////////////////////////
 	int local_time_index = 0;
 	{
 		int camera_index, pattern_graph_index, pattern_superscript, time_graph_index, time_superscript;
-		for (int i  = 0; i < NumberSingles(); i++){
+		int num_singles = NumberSingles();
+		vector<Matrix4d> vec_Aprime(num_singles);
+		vector<bool> aprime_bit_vector(num_singles, false);
+
+
+
+#pragma omp parallel for private(camera_index, pattern_graph_index, time_graph_index, LHS, time_superscript, pattern_superscript, local_time_index, Aprime )
+		for (int i  = 0; i < num_singles; i++){
 
 			if (AllInitialized(singles[i].rhs) && V_has_initialization[singles[i].lhs]){
 				if (i % 20 == 0){
-					cout << "Computing and writing reprojection for " << i << " of  " << NumberSingles() << endl;
+#pragma omp critical
+					{
+						cout << "Computing and writing reprojection for " << i << " of  " << NumberSingles() << endl;
+					}
 				}
 
 				camera_index = singles[i].lhs;
@@ -2761,6 +2760,8 @@ void MCcali::WriteSolutionAssessError(string write_directory, vector<string>& ca
 				local_time_index = time_superscript - CCV[camera_index]->start_time_this_camera;
 
 				Aprime = LHS* vector_to_use[time_graph_index].inverse()*vector_to_use[pattern_graph_index].inverse();
+				aprime_bit_vector[i] = true;
+				vec_Aprime[i] = Aprime;
 
 				// reprojection error is squared, then divided by number of points, need to sum and divide by number of foundational relationships.
 				if (type < 0) {
@@ -2771,10 +2772,17 @@ void MCcali::WriteSolutionAssessError(string write_directory, vector<string>& ca
 							pattern_superscript, current_write_dir, write, i, rotating, 0);
 				}
 
-				out << "Equation " << i << endl << Aprime << endl;
+
 
 			}
 		}
+
+		for (int i  = 0; i < num_singles; i++){
+			if (aprime_bit_vector[i] == true){
+				out << "Equation " << i << endl << vec_Aprime[i] << endl;
+			}
+		}
+
 	}
 
 	out.close();
@@ -2845,115 +2853,6 @@ void MCcali::OutputVariablesWithInitialization(string filename, int type){
 
 }
 
-//void MCcali::OutputRunResults(string filename){
-//
-//	ofstream out;
-//	out.open(filename.c_str());
-//
-//	/// make this a MC function, and record the types being submitted.
-//	int number_types = type_recorder.size();
-//
-//	out << "c1 cost function error " << endl;
-//	for (int i = 0; i < number_types; i++){
-//		out << type_recorder[i] << ": " << summed_c1_cost_function_error_by_type[i] << endl;
-//	}
-//
-//	out << "---------------------------------" << endl;
-//
-//	out << "AE/c1 cost function error, averaged by number of FRs " << endl;
-//	for (int i = 0; i < number_types; i++){
-//		out << type_recorder[i] << ": " << summed_c1_cost_function_error_by_type[i]/double(an) << endl;
-//	}
-//
-//	out << "---------------------------------" << endl;
-//	out << "c2 cost function error " << endl;
-//	for (int i = 0; i < number_types; i++){
-//		out << type_recorder[i] << ": " << summed_c2_cost_function_error_by_type[i] << endl;
-//	}
-//
-//	out << "c2 cost function error, averaged by number FRs " << endl;
-//	for (int i = 0; i < number_types; i++){
-//		out << type_recorder[i] << ": " << summed_c2_cost_function_error_by_type[i]/double(an) << endl;
-//	}
-//
-//	out << "---------------------------------" << endl;
-//
-//	double sum_err = 0;
-//
-//	out << "---------------------------------" << endl;
-//	out << "Comparison to equation fidelity, c1 error. " << endl;
-//
-//	for (int i = 0; i < number_types; i++){
-//		out << type_recorder[i] << ": ";
-//		for (int j = 0; j < NumberSingles(); j++){
-//			out << cost_function_error_by_type_c1[i][j] << " ";
-//		}
-//		out << endl;
-//	}
-//
-//	out << "---------------------------------" << endl;
-//	out << "Reprojection error, by single term. " << endl;
-//	// this may be different ...
-//
-//	vector<double> reproj_sums;
-//	for (int i = 0; i <number_types; i++){
-//		out << type_recorder[i] << ": ";
-//		sum_err = 0;
-//		for (int j = 0; j < NumberSingles(); j++){
-//			out << reprojection_error_by_term_and_type[i][j] << " ";
-//			sum_err += reprojection_error_by_term_and_type[i][j];
-//		}
-//		out <<  " Total " << sum_err << endl;
-//		reproj_sums.push_back(sum_err);
-//	}
-//
-//	for (int i = 0; i <number_types; i++){
-//		out << type_recorder[i] << ": ";
-//		out << "Reprojection error, rrmse: " << sqrt(reproj_sums[i]/double(NumberSingles())) << endl;
-//	}
-//
-//	out << "Number valid image points strict " << number_valid_points_rae_strict << endl;
-//
-//	for (int i = 0; i <number_types; i++){
-//		out << type_recorder[i] << ": ";
-//		out << "RAE strict, average, stddev, median : " << average_rae_strict[i] << ", " << stddev_rae_strict[i] << ", " << median_rae_strict[i] << endl;
-//	}
-//
-//	if (average_rae_multi.size() > 0){
-//
-//		out << "Number valid image points multi " << number_valid_points_rae_multi << endl;
-//		for (int i = 0; i <number_types; i++){
-//			out << type_recorder[i] << ": ";
-//			out << "RAE multi, average, stddev, median : " << average_rae_multi[i] << ", " << stddev_rae_multi[i] << ", " << median_rae_multi[i] << endl;
-//		}
-//	}
-//
-//	if (average_rot_angle_error.size() > 0){
-//		// off by 2 in this case.
-//		out << "Comparison to camera ground truth. " << endl;
-//
-//
-//		for (int i = 0, in = average_rot_angle_error.size(); i < in; i++){
-//			out << type_recorder[i + 2] << ": ";
-//			out << "Average rotation angle, Average rotation error, Average translation error, average whole error : " << endl;
-//			out << "rotation angle, average, stddev, median: " << average_rot_angle_error[i] << ", "
-//					<< std_rot_angle_error[i] << ", " << median_rot_angle_error[i] << endl;
-//			out << "rotation, average, stddev, median: " << average_rot_error[i] << ", "
-//					<< std_rot_error[i] << ", " << median_rot_error[i] << endl;
-//			out << "translation, average, stddev, median: " << average_translation_error[i] << ", "
-//					<< std_translation_error[i] << ", " << median_translation_error[i] << endl;
-//			out << "whole, average, stddev, median: " << average_whole_error[i] << ", "
-//					<< std_whole_error[i] << ", " << median_whole_error[i] << endl;
-//			out << "----" << endl;
-//		}
-//
-//	}
-//
-//	out.close();
-//
-//}
-
-
 
 void MCcali::OutputRunResults(string filename){
 
@@ -3001,7 +2900,12 @@ void MCcali::OutputRunResults(string filename){
 
 	for (int i = 0; i <number_types; i++){
 		out << descriptor_recorder[i] << ": ";
-		out << "RAE , average, stddev, median : " << average_rae_strict[i] << ", " << stddev_rae_strict[i] << ", " << median_rae_strict[i] << endl;
+
+		out << "RAE w/ BA, average, stddev, median : " << average_rae_ba[i];
+		out << ", " << stddev_rae_ba[i] << ", " << median_rae_ba[i] << endl;
+
+		out << "SQRT -- RAE w/ BA, average, stddev, median : " << sqrt(average_rae_ba[i]);
+		out << ", " << sqrt(stddev_rae_ba[i]) << ", " << sqrt(median_rae_ba[i]) << endl;
 	}
 
 
@@ -3083,8 +2987,6 @@ double AssessRotationError(vector<Matrix4d>& Cgts, vector<Matrix4d>& Cnews, int 
 
 		H = Cgts[i] - Cnews[i];
 
-
-
 		local_error = 0;
 		for (int r = 0; r < 3; r++){
 			for (int c = 0; c < 3; c++){
@@ -3126,8 +3028,6 @@ double AssessRotationErrorAxisAngle(vector<Matrix4d>& Cgts, vector<Matrix4d>& Cn
 
 	double RV[9];
 	double aa[3];
-
-
 
 	vector<double> error_vector;
 

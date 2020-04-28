@@ -17,6 +17,7 @@ public:
 	vector< cv::Point3f> three_d_points_internal; // for strawberry case
 	Ptr<aruco::Dictionary> dictionary;
 	vector<cv::Ptr<cv::aruco::CharucoBoard> > boards; /// for refining the estimate of corner locations
+	Ptr<aruco::DetectorParameters> detectorParams;
 	vector< vector<int> > display_colors;
 	vector<pair<int, int> > min_max_id_pattern;
 	vector<pair<int, int> > min_max_id_squares;
@@ -29,6 +30,9 @@ public:
 	PatternsCreated(string read_dir, string write_dir, bool rotate, string src_file, bool generate_only);
 
 	void DetermineBoardsPresentFromMarkerList(vector<int>& markers, vector<bool>& boards_seen);
+	void DetermineBoardsPresentFromMarkerList(vector<int>& markers, vector<bool>& boards_seen,
+			vector< vector< Point2f > >& corners, vector< vector< vector< Point2f > > >& corners_sorted,
+			vector< vector<int> >& markers_sorted);
 	int MappingArucoIDToPatternNumber(int id);
 
 	Scalar Color(int index);
@@ -87,9 +91,9 @@ public:
 
 	CameraCali(string read_dir, PatternsCreated* P, int max_ext_images, int max_int_images_read, int max_int_images_use);
 
-	void FindCornersCharuco(string write_dir, string src_file, bool write_internal_images = false);
+	void FindCornersCharuco(string write_dir, bool write_internal_images = false);
 
-	void FindCornersArucoCharuco(string write_dir, string src_file, bool verbose = true, string verbose_write_dir = "");
+	void FindCornersArucoCharuco(string write_dir, bool verbose = true, string verbose_write_dir = "");
 
 	void ReadCorners(string read_dir);
 
@@ -128,6 +132,6 @@ int CreateStrawberryImagesCharucoExp(vector<Mat>& images, int squaresX, int squa
 int CreateRotateCaseImagesCharuco(vector<Mat>& images, int squaresX, int squaresY, int squareLength, int markerLength,
 		int margins, int id_start_number, int dictionary_version, string src_file);
 
-
+Matrix3d CopyRotationMatrixFromExternal(Matrix4d& M);
 
 #endif /* CAMERA_CALIBRATION_HPP_ */

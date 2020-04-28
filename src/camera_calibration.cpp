@@ -8,6 +8,7 @@
 #include "camera_calibration.hpp"
 #include "DirectoryFunctions.hpp"
 #include "helper.hpp"
+#include "local_charuco.hpp"
 
 bool readDetectorParameters(string filename, Ptr<aruco::DetectorParameters> &params) {
 	FileStorage fs(filename, FileStorage::READ);
@@ -35,6 +36,19 @@ bool readDetectorParameters(string filename, Ptr<aruco::DetectorParameters> &par
 	return true;
 }
 
+Matrix3d CopyRotationMatrixFromExternal(Matrix4d& M4){
+
+	Matrix3d M3;
+	for (int r = 0; r < 3; r++){
+		for (int c = 0; c < 3; c++){
+			M3(r, c) = M4(r, c);
+		}
+	}
+
+	return M3;
+
+}
+
 string CreatePaddedNumberString(int number, int length){
 
 	string temp_string = ToString<int>(number);
@@ -49,7 +63,7 @@ string CreatePaddedNumberString(int number, int length){
 }
 
 int CreateRotateCaseImagesCharuco(vector<Mat>& images, int squaresX, int squaresY, int squareLength, int markerLength,
-		int margins, int id_start_number, int dictionary_version, string src_file){
+		int margins, int id_start_number, int dictionary_version, Ptr<aruco::DetectorParameters>& detectorParams){
 
 	Ptr<aruco::Dictionary> dictionary =
 			aruco::getPredefinedDictionary(aruco::PREDEFINED_DICTIONARY_NAME(dictionary_version));
@@ -116,14 +130,6 @@ int CreateRotateCaseImagesCharuco(vector<Mat>& images, int squaresX, int squares
 	}
 
 
-	Ptr<aruco::DetectorParameters> detectorParams = aruco::DetectorParameters::create();
-
-	bool readOk = readDetectorParameters(src_file.c_str(), detectorParams);
-	if(!readOk) {
-		cout << "Invalid detector parameters file" << endl;
-		return 0;
-	}
-
 	int board_selected;
 
 	for (int i = 1, in = images.size(); i < in; i++){
@@ -149,6 +155,7 @@ int CreateRotateCaseImagesCharuco(vector<Mat>& images, int squaresX, int squares
 			/// can choose which board to use here ...
 			board_selected = ids[0]/number_markers;
 			cv::aruco::interpolateCornersCharuco(corners, ids, image, boards[board_selected], charucoCorners, charucoIds);
+
 			// if at least one charuco corner detected
 			if(charucoIds.size() > 0)
 			{
@@ -181,12 +188,23 @@ PatternsCreated::PatternsCreated(string read_dir, string write_dir, bool rotate,
 	string filename_write;
 	string command;
 
+	detectorParams = aruco::DetectorParameters::create();
+
+	bool readOk = readDetectorParameters(src_file, detectorParams);
+	if(!readOk) {
+		cout << "Invalid detector parameters file, quitting " << src_file << endl;
+		cout << __LINE__ << " in " << __FILE__ << endl;
+		exit(1);
+	}
+
 	if (rotate_case == false){
 		max_internal_patterns = 0;
 		internalx = 0;  internaly = 0;
 
 		string returnString;
 		int dictionary_version;
+
+		Mat boardCopy;
 
 		/// read spec file,
 		string filename = read_dir + "network_specification_file.txt";
@@ -254,6 +272,19 @@ PatternsCreated::PatternsCreated(string read_dir, string write_dir, bool rotate,
 			boards[i]->draw( imageSize, boardImage, 10, 1 );
 			filename = write_dir + "Board" + ToString<int>(i) + ".png";
 			imwrite(filename.c_str(), boardImage);
+
+			// write one with the markers.
+			cvtColor(boardImage, boardCopy, cv::COLOR_GRAY2RGB);
+
+			vector< vector< Point2f > > corners, rejected;
+			vector< int > ids;
+			// detect markers and estimate pose
+			aruco::detectMarkers(boardImage, dictionary, corners, ids, detectorParams, rejected);
+
+			aruco::drawDetectedMarkers(boardCopy, corners, ids, Scalar(255, 255, 0));
+			filename = write_dir + "BoardWithArucoLabels" + ToString<int>(i) + ".png";
+			cv::imwrite(filename, boardCopy);
+
 		}
 
 		//pendatic, but want to avoid re-computing it and making a mistake later.
@@ -337,18 +368,6 @@ PatternsCreated::PatternsCreated(string read_dir, string write_dir, bool rotate,
 		/// read specification file,
 		string filename = read_dir + "rotate_specification_file.txt";;
 
-		//		internal_squaresX 14
-		//		internal_squaresY 14
-		//		internal_squareLength 200
-		//		internal_markerLength 90
-		//		internal_margin 50
-		//		number_boards 8
-		//		squaresX 3
-		//		squaresY 3
-		//		squareLength 60
-		//		markerLength 46
-
-
 		returnString = FindValueOfFieldInFile(filename, "aruco_dict", false, true);
 		dictionary_version = FromString<int>(returnString);
 
@@ -412,7 +431,6 @@ PatternsCreated::PatternsCreated(string read_dir, string write_dir, bool rotate,
 				boards[i]->ids[j] = m;
 			}
 
-			//cout << "Line 791" << endl; cin >> df;
 			min_max_id_pattern[i].second = min_max_id_pattern[i].first + num_markExt - 1;
 			min_max_id_squares.push_back(pair<int, int>(s, s));
 			s = s + (squaresXext - 1)*(squaresYext - 1) - 1;
@@ -485,8 +503,6 @@ PatternsCreated::PatternsCreated(string read_dir, string write_dir, bool rotate,
 		}
 
 
-
-
 		// pendantic, to avoid re-computing it and making a mistake later.
 		number_total_squares = min_max_id_squares[number_boards - 1].second  + 1;
 		int_number_markers = min_max_id_pattern[number_boards - 1].second + 1;
@@ -525,19 +541,11 @@ PatternsCreated::PatternsCreated(string read_dir, string write_dir, bool rotate,
 		cout << "Before create images " << endl;
 		// detect pattern locations on the image..
 
-		CreateRotateCaseImagesCharuco(images, internalx, internaly, sLin, mLin, margin, id_start, dictionary_version, src_file);
+		CreateRotateCaseImagesCharuco(images, internalx, internaly, sLin, mLin, margin, id_start, dictionary_version, detectorParams);
 		filename = write_dir + "created_backstop.png";
 		imwrite(filename.c_str(), images[0]);
 
 		// for each tag, generate where it should be in 3D space.  so indices are tag0 corner0-3 tag1 corner0-3 etc., .etc.  not on a grid necessarily.
-		Ptr<aruco::DetectorParameters> detectorParams = aruco::DetectorParameters::create();
-
-		bool readOk = readDetectorParameters(src_file, detectorParams);
-		if(!readOk) {
-			cout << "Invalid detector parameters file, quitting " << src_file << endl;
-			cout << __LINE__ << " in " << __FILE__ << endl;
-			exit(1);
-		}
 
 		aruco::detectMarkers(images[0], dictionary, corners, ids, detectorParams, rejected);
 
@@ -705,7 +713,6 @@ CameraCali::CameraCali(string read_dir, PatternsCreated* P, int max_ext_images, 
 
 
 	if (dir_exists){
-		// Still, redo.  can parallelize.
 		ReadDirectory(ext_dir, im_names);
 	}	else {
 		ext_dir = read_dir;
@@ -853,6 +860,27 @@ void PatternsCreated::DetermineBoardsPresentFromMarkerList(vector<int>& markers,
 	}
 }
 
+void PatternsCreated::DetermineBoardsPresentFromMarkerList(vector<int>& markers, vector<bool>& boards_seen,
+		vector< vector< Point2f > >& corners, vector< vector< vector< Point2f > > >& corners_sorted,
+		vector< vector<int> >& markers_sorted){
+
+	int np = NumberPatterns();
+
+	corners_sorted.resize(np);
+	markers_sorted.resize(np);
+
+	for (int i = 0, in = markers.size(); i < in; i++){
+		for (int j = 0;  j < np; j++){ // don't walk this one if it is already occupied.
+			if (markers[i] >= min_max_id_pattern[j].first && markers[i] <= min_max_id_pattern[j].second){
+				boards_seen[j] = true;
+				markers_sorted[j].push_back(markers[i]);
+				corners_sorted[j].push_back(corners[i]);
+			}
+		}
+	}
+}
+
+
 int PatternsCreated::MappingArucoIDToPatternNumber(int id){
 	int np = NumberPatterns();
 
@@ -897,8 +925,6 @@ void ComputeStats(vector<double>& ds, double& mu, double& var){
 	}
 
 	var /= n;
-
-	cout << "mu is " << mu << ", variance is " << var << endl;
 }
 
 double ComputePDF(double mu, double var, double x){
@@ -989,7 +1015,6 @@ void FilterLargerDuplicates( vector< int >& ids, vector< vector< Point2f > >& co
 		if (ids[i] < max_internal){
 			current_cornersi = corners[i];
 			int di = euclideanDist(current_cornersi[0], current_cornersi[2]);
-			//cout << "Distance " << di  << endl;
 
 			if (fabs(mu - di) < 0.20*mu ){
 				ids_new.push_back(ids[i]);
@@ -1008,18 +1033,8 @@ void FilterLargerDuplicates( vector< int >& ids, vector< vector< Point2f > >& co
 }
 
 
-void CameraCali::FindCornersArucoCharuco(string write_dir, string src_file, bool verbose, string verbose_write_dir ){
+void CameraCali::FindCornersArucoCharuco(string write_dir, bool verbose, string verbose_write_dir ){
 
-	/// first, need to find the patterns.
-	Ptr<aruco::DetectorParameters> detectorParams = aruco::DetectorParameters::create();
-
-	bool readOk = readDetectorParameters(src_file, detectorParams);
-	if(!readOk) {
-		cout << "Cannot read in Calibrate -- Invalid detector parameters file " << src_file << endl;
-		exit(1);
-	} else {
-		cout << "Read the detector parameters ..." << endl;
-	}
 
 	int number_patterns = P_class->NumberPatterns();
 	int number_markers = P_class->NumberMarkers();
@@ -1033,6 +1048,8 @@ void CameraCali::FindCornersArucoCharuco(string write_dir, string src_file, bool
 
 	string filename;
 	int number_images = images.size();
+
+
 	Mat imageCopy;
 	Scalar b_color;
 	MatrixXd twod(number_squares, 2);
@@ -1050,11 +1067,11 @@ void CameraCali::FindCornersArucoCharuco(string write_dir, string src_file, bool
 	MatrixXd twod_internal(internal_pattern_max_squares, 2);
 
 
-	if (images.size() == 0){
+	if (number_images == 0){
 		cout << "the number of images is 0, quitting " << endl;
 		exit(1);
 	}	else {
-		cout << "Number of images " << images.size() << endl;
+		cout << "Number of images " << number_images << endl;
 	}
 
 
@@ -1076,7 +1093,7 @@ void CameraCali::FindCornersArucoCharuco(string write_dir, string src_file, bool
 		id_bool.resize(P_class->max_internal_patterns, false);
 
 		// detect markers and estimate pose
-		aruco::detectMarkers(images[i], P_class->dictionary, corners, ids, detectorParams, rejected);
+		aruco::detectMarkers(images[i], P_class->dictionary, corners, ids, P_class->detectorParams, rejected);
 
 		if(ids.size() > 0) {
 
@@ -1123,20 +1140,30 @@ void CameraCali::FindCornersArucoCharuco(string write_dir, string src_file, bool
 
 
 	//////////////////////// EXTERNAL PART ... sub in the charuco part from the regular cali files /////////////////////
+
+	two_d_point_coordinates_dense.resize(number_images, twod);
+	points_present.resize(number_images, vector<bool>(number_squares, false));
+
+#pragma omp parallel for private(b_color, global_index)
 	for (int i = 0; i < number_images; i++){
 
-		out << "image " << i << endl;
-		if (verbose){	cout << "image " << i << endl; }
-		// initialize per image.
-		points_present.push_back(vector<bool>(number_squares, false));
-		two_d_point_coordinates_dense.push_back(twod);
+		vector< vector<cv::Point2f> > charuco_corners_all;
+		vector< vector<int> > charuco_ids_all;
+		vector<Scalar> colors;
+
+		if (verbose){
+#pragma omp critical
+			{
+				cout << "image " << i << endl;
+			}
+		}
 
 		vector< int > ids;
 		vector< vector< Point2f > > corners, rejected;
-		vector< Vec3d > rvecs, tvecs;
 
 		// detect markers and estimate pose
-		aruco::detectMarkers(images[i], P_class->dictionary, corners, ids, detectorParams, rejected);
+		// want this to be done in parallel.
+		aruco::detectMarkers(images[i], P_class->dictionary, corners, ids, P_class->detectorParams, rejected);
 
 		// draw results -- dealing with the possibility of more than one board per image.
 		if(ids.size() > 0) {
@@ -1150,19 +1177,25 @@ void CameraCali::FindCornersArucoCharuco(string write_dir, string src_file, bool
 					b_color = P_class->Color(p);
 
 					// want this to be fresh each iter.
-					std::vector<cv::Point2f> charucoCorners;
-					std::vector<int> charucoIds;
+					vector<cv::Point2f> charucoCorners;
+					vector<int> charucoIds;
 
-					cv::aruco::interpolateCornersCharuco(corners, ids, images[i], P_class->boards[p], charucoCorners, charucoIds);
+					cv::aruco::charucoLocal::interpolateCornersCharucoHomographyLocal(corners, ids, images[i],
+							P_class->boards[p], charucoCorners, charucoIds);
+
 					// if at least one charuco corner detected
 					if(charucoIds.size() > 0)
 					{
 						if (verbose == true){
-							cout << "Board " << p << " number " << charucoIds.size() << endl;
+#pragma omp critical
+							{
+								cout << "Board " << p << " number " << charucoIds.size() << endl;
+							}
 						}
 
-						/// corners (2d) are linked to the Ids
-						cv::aruco::drawDetectedCornersCharuco(images[i], charucoCorners, charucoIds, b_color);
+						charuco_corners_all.push_back(charucoCorners);
+						charuco_ids_all.push_back(charucoIds);
+						colors.push_back(b_color);
 
 						for (int j  = 0, jn = charucoIds.size(); j < jn; j++){
 
@@ -1172,16 +1205,24 @@ void CameraCali::FindCornersArucoCharuco(string write_dir, string src_file, bool
 							two_d_point_coordinates_dense[i](global_index, 0) = charucoCorners[j].x;
 							two_d_point_coordinates_dense[i](global_index, 1) = charucoCorners[j].y;
 
-							out << global_index << " " << std::setprecision(9) << charucoCorners[j].x << " " << std::setprecision(9) << charucoCorners[j].y << " ";
 						}
 					}	else {
 						boards_detected[i][p] = false;  // sometimes there's a marker detected, but we can't grab good corners.
 					}
 				}
 			}
+
+			for (int j = 0, jn = colors.size(); j < jn; j++){
+				for (int p = 0, pn  = charuco_corners_all[j].size(); p < pn; p++){
+					cv::circle(images[i],charuco_corners_all[j][p], 40, colors[j], 6);
+				}
+			}
+
 		}
 
 		if (verbose){
+
+
 
 			filename = verbose_write_dir + "external_initial_detect" + ToString<int>(i) + ".jpg";
 
@@ -1195,6 +1236,19 @@ void CameraCali::FindCornersArucoCharuco(string write_dir, string src_file, bool
 
 			imwrite(filename.c_str(), im_small);
 		}
+
+	}
+
+	for (int i = 0; i < number_images; i++){
+		out << "image " << i << endl;
+
+		for (int j = 0; j < number_squares; j++){
+			if (points_present[i][j] == true){
+				out << j << " " << std::setprecision(9) << two_d_point_coordinates_dense[i](j, 0)
+														<< " " << std::setprecision(9) << two_d_point_coordinates_dense[i](j, 1) << " ";
+			}
+		}
+
 
 		out << endl << "end " << i << endl;
 	}
@@ -1213,16 +1267,16 @@ void CameraCali::FindCornersArucoCharuco(string write_dir, string src_file, bool
 	out.close();
 }
 
-void CameraCali::FindCornersCharuco(string write_dir, string src_file, bool write_internal_images ){
+void convertToMat( InputArray _points, Mat& outArr) {
 
-	/// first, need to find the patterns.
-	Ptr<aruco::DetectorParameters> detectorParams = aruco::DetectorParameters::create();
+	outArr = _points.getMat();
+}
 
-	bool readOk = readDetectorParameters(src_file, detectorParams);
-	if(!readOk) {
-		cout << "Cannot read in Calibrate -- Invalid detector parameters file " << src_file << endl;
-		exit(1);
-	}
+
+
+
+void CameraCali::FindCornersCharuco(string write_dir, bool write_internal_images ){
+
 
 	int number_patterns = P_class->NumberPatterns();
 	int number_squares = P_class->NumberSquares();
@@ -1237,26 +1291,32 @@ void CameraCali::FindCornersCharuco(string write_dir, string src_file, bool writ
 
 	boards_detected.resize(number_images, vector<bool>(P_class->NumberPatterns(), false));
 
-
 	std::ofstream out;
 	filename = write_dir + "points.txt";
 	out.open(filename.c_str());
 
-	int internal_found_counter = 0;
-	for (int i = 0; i < number_images; i++){
+	two_d_point_coordinates_dense.resize(number_images, twod);
+	points_present.resize(number_images, vector<bool>(number_squares, false));
 
-		out << "image " << i << endl;
-		points_present.push_back(vector<bool>(number_squares, false));
-		two_d_point_coordinates_dense.push_back(twod);
+
+	int internal_found_counter = 0;
+
+#pragma omp parallel for private(b_color, global_index)
+	for (int i = 0; i < number_images; i++){
 
 		vector< int > ids;
 		vector< vector< Point2f > > corners, rejected;
 		vector< Vec3d > rvecs, tvecs;
 
+		vector< vector< vector< Point2f > > > corners_sorted;
+		vector< vector<int> > markers_sorted;
+
+		bool collinear_markers = false;
+
 		if ((max_internals_use == 0) || (internal_found_counter < max_internals_use) )
 		{
 			// detect markers and estimate pose
-			aruco::detectMarkers(images[i], P_class->dictionary, corners, ids, detectorParams, rejected);
+			aruco::detectMarkers(images[i], P_class->dictionary, corners, ids, P_class->detectorParams, rejected);
 
 			// draw results -- dealing with the possibility of more than one board per image.
 			if(ids.size() > 0) {
@@ -1273,9 +1333,21 @@ void CameraCali::FindCornersCharuco(string write_dir, string src_file, bool writ
 						std::vector<cv::Point2f> charucoCorners;
 						std::vector<int> charucoIds;
 
-						cv::aruco::interpolateCornersCharuco(corners, ids, images[i], P_class->boards[p], charucoCorners, charucoIds);
+						cv::aruco::charucoLocal::interpolateCornersCharucoHomographyLocal(corners, ids, images[i],
+								P_class->boards[p], charucoCorners, charucoIds);
+
+						// check for degenerate configs ....
+						collinear_markers = cv::aruco::charucoLocal::testCharucoCornersCollinear(P_class->boards[p],
+														 charucoIds);
+
+						if (charucoIds.size() > 0 && collinear_markers){
+							for (int j = 0, jn = charucoIds.size(); j < jn; j++){
+								circle(images[i], charucoCorners[j], 10, b_color, 2);
+							}
+						}
+
 						// if at least one charuco corner detected
-						if(charucoIds.size() > 0)
+						if((charucoIds.size() > 0) && (collinear_markers == false))
 						{
 							if (i > number_external_images_max){
 								internal_found_counter++;
@@ -1291,7 +1363,6 @@ void CameraCali::FindCornersCharuco(string write_dir, string src_file, bool writ
 								two_d_point_coordinates_dense[i](global_index, 0) = charucoCorners[j].x;
 								two_d_point_coordinates_dense[i](global_index, 1) = charucoCorners[j].y;
 
-								out << global_index << " " << std::setprecision(9) << charucoCorners[j].x << " " << std::setprecision(9) << charucoCorners[j].y << " ";
 							}
 						}	else {
 							boards_detected[i][p] = false;  // sometimes there's a marker detected, but we can't grab good corners.
@@ -1302,12 +1373,27 @@ void CameraCali::FindCornersCharuco(string write_dir, string src_file, bool writ
 		}
 
 		if (i < number_external_images_max || write_internal_images){
+
 			filename = write_dir + "initial_detect" + ToString<int>(i) + ".png";
 			imwrite(filename.c_str(), images[i]);
 		}
+	}
+
+
+	for (int i = 0; i < number_images; i++){
+		out << "image " << i << endl;
+
+		for (int j = 0; j < number_squares; j++){
+			if (points_present[i][j] == true){
+				out << j << " " << std::setprecision(9) << two_d_point_coordinates_dense[i](j, 0)
+																<< " " << std::setprecision(9) << two_d_point_coordinates_dense[i](j, 1) << " ";
+			}
+		}
+
 
 		out << endl << "end " << i << endl;
 	}
+
 
 	// fill in everything computed in this function.
 	out << "Image-board truth table " << endl;
@@ -1321,6 +1407,9 @@ void CameraCali::FindCornersCharuco(string write_dir, string src_file, bool writ
 
 	out.close();
 }
+
+
+
 
 void CameraCali::ReadCorners(string read_dir){
 
@@ -1362,7 +1451,6 @@ void CameraCali::ReadCorners(string read_dir){
 
 		// initialize per image.
 		points_present.push_back(vector<bool>(number_squares, false));
-		//points_per_board.push_back(vector<int>(number_patterns, 0));
 		two_d_point_coordinates_dense.push_back(twod);
 
 		// while we don't have 'end' as the first of a triple ....
@@ -1532,6 +1620,7 @@ void CameraCali::CalibrateBasic(float initial_focal_px, int zero_tangent_dist,
 	/// want to recover pose after calibration ...need a map.
 	vector<int> mapping_from_limited_to_full_images;
 	vector<int> mapping_from_limited_to_full_patterns;
+
 	// create a collection of the points for each image -- hopefully this will work. map -- .
 	vector< vector< cv::Point2f> > twod_points_wo_blanks;
 	vector< vector< cv::Point3f> > threed_points_wo_blanks;
@@ -1609,7 +1698,6 @@ void CameraCali::CalibrateBasic(float initial_focal_px, int zero_tangent_dist,
 
 
 	cameraMatrix = cv::Mat::eye(3, 3, CV_64F);
-
 	distCoeffs = cv::Mat::zeros(5, 1, CV_64F);
 
 
@@ -1703,10 +1791,7 @@ void CameraCali::CalibrateBasic(float initial_focal_px, int zero_tangent_dist,
 		for (int j = 0, jn = imagePoints2.size(); j < jn; j++){
 			line(reproject_cam_cali_images[correct_image], twod_points_wo_blanks[m][j],imagePoints2[j], Scalar(255, 0, 255), 2 );
 		}
-
 	}
-
-
 
 	////////////////////// External -- write into class variables ///////////////////////////////////////////
 	/// need to prep the matrix of rotations ...
@@ -1752,9 +1837,13 @@ void CameraCali::CalibrateBasic(float initial_focal_px, int zero_tangent_dist,
 
 	write_internal_images == false ? number_to_write = number_external_images_max: number_to_write = number_images;
 
+#pragma omp parallel for private(filename, rview)
 	for (int i = 0; i < number_to_write; i++){
-		if (i% 10 == 0){
-			cout << "Writing external " << i << endl;
+#pragma omp critical
+		{
+			if (i% 10 == 0){
+				cout << "Writing external " << i << endl;
+			}
 		}
 		cv::remap(reproject_cam_cali_images[i], rview, map1, map2, cv::INTER_LINEAR);
 
@@ -1860,7 +1949,7 @@ void CameraCali::CalibrateRotatingSet(string write_dir, int number_points_needed
 			if (points_per_board[i][p] >= number_points_needed_to_count){
 
 				has_calibration_estimate[i][p] = true;
-				cout << "Points per " << points_per_board[i][p] << endl;
+				//cout << "Points per " << points_per_board[i][p] << endl;
 
 				mapping_from_limited_to_full_images.push_back(i);
 				mapping_from_limited_to_full_patterns.push_back(p);
@@ -1905,9 +1994,6 @@ void CameraCali::CalibrateRotatingSet(string write_dir, int number_points_needed
 	for (int i = 0; i < P_class->max_internal_patterns; i++){
 		if (id_bool[i] == true){
 			for (int j =0 ; j < 4; j++){
-				//cout << "Added internal " << endl;
-
-				//twod_points_wo_blanks[last_added][i].x;
 				twod_points_wo_blanks_internal[last_added][s].x = internal_two_d_point_coordinates_dense[0](i*4 + j, 0);
 				twod_points_wo_blanks_internal[last_added][s].y = internal_two_d_point_coordinates_dense[0](i*4 + j, 1);
 
@@ -1951,7 +2037,6 @@ void CameraCali::CalibrateRotatingSet(string write_dir, int number_points_needed
 
 		rvecs.push_back(rv);
 		tvecs.push_back(tv);
-
 	}
 
 	cout << "After external" << endl;
@@ -1987,8 +2072,6 @@ void CameraCali::CalibrateRotatingSet(string write_dir, int number_points_needed
 
 	/// internal only
 	int number_cali_items = twod_points_wo_blanks.size();
-	//for (int m = number_cali_items - 1; m < number_cali_items; m++)
-
 	{
 
 		cv::projectPoints( cv::Mat(threed_points_wo_blanks_internal[0]), rvecs_internal[0], tvecs_internal[0], cameraMatrix,  // project
@@ -2029,6 +2112,7 @@ void CameraCali::CalibrateRotatingSet(string write_dir, int number_points_needed
 
 	// initialize
 	vector<Matrix4d> patterns_base(number_patterns, I);
+
 	// whether or not the board is present tells us whether to look at the value there.
 	external_parameters.resize(number_images, patterns_base);
 
@@ -2043,7 +2127,6 @@ void CameraCali::CalibrateRotatingSet(string write_dir, int number_points_needed
 		image_index = mapping_from_limited_to_full_images[stre];
 		pattern_index = mapping_from_limited_to_full_patterns[stre];
 
-
 		for (int i = 0; i < 3; i++){
 			for (int j = 0; j < 3; j++){
 				external_parameters[image_index][pattern_index](i, j) = rotMatrix.at<double>(i, j);
@@ -2055,15 +2138,18 @@ void CameraCali::CalibrateRotatingSet(string write_dir, int number_points_needed
 
 	//	/////////////////////////////// UNDISTORT, WRITE REPROJECTION ////////////////////////////////////
 	cv::Mat view, rview, map1, map2;
-	//	cv::Mat gray;
 	string filename;
 	cv::initUndistortRectifyMap(cameraMatrix, distCoeffs, cv::Mat(),
 			cv::getOptimalNewCameraMatrix(cameraMatrix, distCoeffs, image_size, 1, image_size, 0),
 			image_size, CV_16SC2, map1, map2);
 
+#pragma omp parallel for private(filename, rview)
 	for (int i = 0; i < number_images; i++){
 		if (i % 10 == 0){
-			cout << "Writing external " << i << endl;
+#pragma omp critical
+			{
+				cout << "Writing external " << i << endl;
+			}
 		}
 		cv::remap(reproject_cam_cali_images[i], rview, map1, map2, cv::INTER_LINEAR);
 
@@ -2364,8 +2450,6 @@ double CameraCali::ComputeReprojectionErrorOneImagePattern(Matrix4d& ExtParamete
 			filename = filename + ".png";
 			imwrite(filename.c_str(), im_copy);
 		}
-
-
 	}
 
 	return reproj_error;
@@ -2448,8 +2532,6 @@ double CameraCali::ComputeReprojectionErrorOneImagePatternGTDRel(Matrix4d& ExtPa
 		tvec.at<double>(r, 0) = ExtParameters(r, 3);
 	}
 
-
-
 	if (write_now){
 		cout << "internal matrix " << endl << cameraMatrix << endl;
 		cout << "rotation matrix " << endl << rotMatrix << endl;
@@ -2461,9 +2543,7 @@ double CameraCali::ComputeReprojectionErrorOneImagePatternGTDRel(Matrix4d& ExtPa
 		distCoeffs.at<double>(i, 0) = distortion(i);
 	}
 
-
 	double reproj_error = 0;
-
 
 	cv::projectPoints( cv::Mat(threed_points_wo_blanks), rvec, tvec, cameraMatrix,  // project
 			distCoeffs, imagePoints2);
@@ -2473,9 +2553,7 @@ double CameraCali::ComputeReprojectionErrorOneImagePatternGTDRel(Matrix4d& ExtPa
 	// scale by the number of points ....
 	reproj_error = reproj_error / double(number_points);
 
-
 	if (write){
-
 		// different colors for the different types.
 		Scalar line_color(0, 0, 0);
 
@@ -2502,7 +2580,6 @@ double CameraCali::ComputeReprojectionErrorOneImagePatternGTDRel(Matrix4d& ExtPa
 
 			line(im_copy, imagePoints2[0],imagePoints2[number_p - 1], line_color, 10 );
 		}
-
 
 		string filename;
 
@@ -2531,6 +2608,3 @@ double CameraCali::ComputeReprojectionErrorOneImagePatternGTDRel(Matrix4d& ExtPa
 
 	return reproj_error;
 }
-
-
-

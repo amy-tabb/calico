@@ -126,6 +126,7 @@ void SolveWithShahsMethod(Matrix4d& Result, vector<Matrix4d>& LHS, vector<Matrix
 		}
 	}
 }
+
 // camera params should be 12*number_cameras.
 void CopyFromCalibration(vector<CameraCali*>& CCV, double* camera_params){
 	int number_cameras = CCV.size();
@@ -275,7 +276,7 @@ void ReconstructXFunctionIDsMC(MCcali& MC, vector<Matrix4d>& vector_variables, v
 			ceres::Solve(options, &problem, &summary);
 
 			out << endl << k << endl;
-			out << summary.FullReport() << endl;
+			out << summary.BriefReport() << endl;
 		}
 	}
 
@@ -298,6 +299,265 @@ void ReconstructXFunctionIDsMC(MCcali& MC, vector<Matrix4d>& vector_variables, v
 
 	A_hats.clear();
 }
+
+
+
+CeresProblemClass::CeresProblemClass(PARAM_TYPE parameter_type, MCcali& MC,	std::ofstream& out){
+
+	out << "Setting up the problem in CeresProblemClass. " << endl;
+	param_type = parameter_type;
+
+	number_variables = MC.NumberVariables();
+	number_equations = MC.NumberSingles();
+
+
+	x = new double[7*number_variables]; // vars to solve for via LM
+	vars_initial = new double[16*number_variables]; // initial solns from linear step, these needed only for those that will not be solved for.
+	bit_vector_bool = new bool[number_variables]; // bit vector which vars we are solving for, versus not.
+	bit_vector_equations = new bool[number_equations];
+
+	for (int i = 0; i < number_variables; i++){
+		bit_vector_bool[i] = false;
+	}
+
+	for (int i = 0; i < number_equations; i++){
+		bit_vector_equations[i] = false;
+	}
+
+	/// quaternion representation
+	for (int i = 0; i < number_variables*7; i++){
+		x[i] = 0;
+	}
+
+	/// matrix rep
+	for (int i = 0; i < number_variables*16; i++){
+		vars_initial[i] = 0;
+	}
+
+}
+
+void CeresProblemClass::AddToProblem(MCcali& MC, vector<CameraCali*>& CCV, double* camera_params,
+		std::ofstream& out){
+
+	int camera_index, pattern_graph_index, pattern_superscript, time_graph_index, time_superscript;
+
+	// convert over those that have been updated in between the bool vectors; update bool vector.  Add these equations with these vars to
+	// keep track of which equations have already been added to the problem so they are not added twice.
+
+	vector<int> new_vars;
+	vector<int> new_eqs;
+	int num_eqs_add = 0;
+	int num_vars_add = 0;
+	int e = -1;  int v_index = -1;
+
+	int local_time_index;
+
+	double im_x, im_y;
+	cv::Point3f threeDpt;
+	Matrix4d M; Matrix4d Minv;
+
+	out << "New vars " ;
+	for (int i = 0; i < number_variables; i++){
+		if (MC.V_has_initialization[i] == true && bit_vector_bool[i] == false){
+			bit_vector_bool[i] = true;
+			new_vars.push_back(i);
+			out << i << " ";
+		}
+	}
+	out << endl;
+
+	MC.UpdateSinglesOpenFlag();
+
+	/// compare singles open with the current equation list.
+	for (int i = 0; i < number_equations; i++){
+		if (MC.singles_open[i] == false && bit_vector_equations[i] == false){
+			// for MC, false means everything is initialized.  for bit_vector_equations, false means we can't add to the cost
+			// function b/c not everything is initialized.
+
+			bit_vector_equations[i] = true;
+			new_eqs.push_back(i);
+			out << "Will add eq " << i << endl;
+		}
+	}
+
+	num_vars_add = new_vars.size();
+	// START HERE
+	for (int var_index = 0; var_index < num_vars_add; var_index++){
+		v_index = new_vars[var_index];
+
+		if (v_index < MC.NumberCameras()){
+			M = MC.V_initial[v_index];
+
+			switch (param_type){
+			case Cali_Quaternion:{
+				ConvertMatrixTo7QuaternionRepresentationx(M, &x[7*v_index]);
+			} break;
+			default:
+			{
+				cout << "Option not dealt with," << __LINE__ << " of " << __FILE__ << endl;
+				exit(1);
+			}
+			}
+
+			// copy over
+			for (int r = 0, v = 0;  r < 4; r++){
+				for (int c = 0; c < 4; c++, v++){
+					vars_initial[16*v_index + v] = M(r, c);
+				}
+			}
+
+
+
+		}	else {
+			// need to use the inverses for these variables.
+			M = MC.V_initial[v_index];
+			Minv = M.inverse();
+
+
+			switch (param_type){
+			case Cali_Quaternion:{
+				ConvertMatrixTo7QuaternionRepresentationx(Minv, &x[7*v_index]);
+			} break;
+			default:
+				cout << "Option not dealt with, " << __LINE__ << " of " __FILE__ << endl;
+				exit(1);
+			}
+
+			// copy over
+			for (int r = 0, v = 0;  r < 4; r++){
+				for (int c = 0; c < 4; c++, v++){
+					vars_initial[16*v_index + v] = Minv(r, c);
+				}
+			}
+		}
+	}
+
+	num_eqs_add = new_eqs.size();
+	for (int eq_index  = 0; eq_index < num_eqs_add; eq_index++){
+		e = new_eqs[eq_index];
+
+		/// means we have an initial value for all of the variables.
+
+		camera_index = MC.singles[e].lhs;
+
+		pattern_graph_index = MC.singles[e].rhs[1];
+		time_graph_index = MC.singles[e].rhs[2];
+
+		time_superscript = MC.V_index.at(time_graph_index);
+		pattern_superscript = MC.V_index.at(pattern_graph_index);
+
+		local_time_index = time_superscript - CCV[camera_index]->start_time_this_camera;
+
+		// walk through all the points on the pattern ...
+		for (int j = CCV[camera_index]->P_class->min_max_id_squares[pattern_superscript].first;
+				j <= CCV[camera_index]->P_class->min_max_id_squares[pattern_superscript].second; j++){
+
+			// and add those that are used on *this* pattern
+			if (CCV[camera_index]->points_used_min[local_time_index].at(j) == true){ // present b/c always used selected k
+
+				im_x = CCV[camera_index]->two_d_point_coordinates_dense[local_time_index](j, 0);    /// twod points w/o blanks is NOT per image to make internal cali work.
+				im_y = CCV[camera_index]->two_d_point_coordinates_dense[local_time_index](j, 1);
+
+				threeDpt = CCV[camera_index]->P_class->three_d_points[j];
+
+				ceres::CostFunction* cost_function =
+						MultiCameraReprojectionError::Create(
+								&camera_params[12*camera_index], im_x, im_y, threeDpt,
+								&vars_initial[0], &bit_vector_bool[0],
+								param_type, number_variables, camera_index, pattern_graph_index, time_graph_index);
+
+				double* c_ = x + camera_index*7;
+				double* p_ = x + pattern_graph_index*7;
+				double* t_ = x + time_graph_index*7;
+
+				problem.AddResidualBlock(cost_function,
+						NULL /* squared loss */,
+						c_,
+						p_,
+						t_);
+			}
+		}
+	}
+}
+
+void CeresProblemClass::SolveWriteBackToMC(MCcali& MC, std::ofstream& out, int iterations, bool output_to_terminal){
+
+	Matrix4d M; Matrix4d Minv;
+
+
+	Solver::Options options;
+	options.linear_solver_type = ceres::DENSE_SCHUR;
+
+	options.minimizer_progress_to_stdout = output_to_terminal;
+	options.num_threads = omp_get_max_threads();
+	options.max_num_iterations = iterations;
+
+	Solver::Summary summary;
+	ceres::Solve(options, &problem, &summary);
+
+	if (output_to_terminal){
+		out << summary.BriefReport() << endl;
+		std::cout << summary.BriefReport() << "\n";
+		cout << "After running solver " << endl;
+	}	else {
+		out << summary.BriefReport() << endl;
+	}
+
+
+
+
+	/// copy over changed items to variable list.
+	for (int i = 0; i < number_variables; i++){
+		if (bit_vector_bool[i] == true){ // IOW this was a varable we solved for this time.
+
+			switch (param_type){
+			case Cali_Quaternion:{
+				Convert7ParameterQuaternionRepresentationIntoMatrix(&x[7*i], M);
+			} break;
+			}
+
+			if (i < MC.NumberCameras()){
+				MC.V_initial[i] = M;
+			}	else {
+				// T and P
+				Minv = M.inverse();
+
+				MC.V_initial[i] = Minv;
+			}
+		}
+
+	}
+
+}
+
+
+// solve problem, convert all answers back to Eigen format (b/c they can change).
+CeresProblemClass::~CeresProblemClass(){
+	cout << "In CPC deconstructor" << endl;
+
+	if (x != 0){
+		delete [] x;
+		x = 0;
+	}
+
+	if (bit_vector_bool != 0){
+		delete [] bit_vector_bool;
+		bit_vector_bool = 0;
+	}
+
+	if (bit_vector_equations != 0){
+		delete [] bit_vector_equations;
+		bit_vector_equations = 0;
+	}
+
+	if (vars_initial != 0){
+		delete [] vars_initial;
+		vars_initial = 0;
+	}
+
+	cout << "Exit CPC deconstructor" << endl;
+}
+
 
 void MinimizeReprojectionError(MCcali& MC, vector<CameraCali*>& CCV, double* camera_params,
 		vector<bool>& bit_vector_true_min, std::ofstream& out, int start_id, int end_id, bool use_all_points_present){
@@ -476,6 +736,8 @@ void MinimizeReprojectionError(MCcali& MC, vector<CameraCali*>& CCV, double* cam
 
 				}	else {
 
+					// can keep only this, potentially get rid of some of the other stuff ...
+
 					local_time_index = time_superscript - CCV[camera_index]->start_time_this_camera;
 
 					int k_points = CCV[camera_index]->PointsForMinimization(local_time_index, pattern_superscript); /// image = time
@@ -522,10 +784,12 @@ void MinimizeReprojectionError(MCcali& MC, vector<CameraCali*>& CCV, double* cam
 
 
 	cout << "Before solver " << endl;
+	cout << "Number of threads " << omp_get_max_threads() << endl;
 	// Run the solver
 	Solver::Options options;
 	options.linear_solver_type = ceres::DENSE_SCHUR;
 	options.minimizer_progress_to_stdout = true;
+	options.num_threads = omp_get_max_threads();
 	Solver::Summary summary;
 	ceres::Solve(options, &problem, &summary);
 

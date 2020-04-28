@@ -73,7 +73,6 @@ public:
 
 	MCcali(vector<CameraCali*>& CCV, PatternsCreated& P_class, int max_number_images_to_use, ofstream& out,
 			int synchronized_rotating_option);
-	MCcali(MCcali& parent, int pstar, int tstar);
 
 	vector<int> A_camera_indices;
 	vector<int> A_pattern_indices;
@@ -104,13 +103,14 @@ public:
 	vector<vector< Vector3d> > Points_progressive_solutions_strict;
 	vector<vector< bool> > Valid_progressive_solutions_strict;
 
-	vector<double> average_rae_strict;
-	vector<double> median_rae_strict;
-	vector<double> stddev_rae_strict;
+	vector<double> average_rae_ba;
+	vector<double> median_rae_ba;
+	vector<double> stddev_rae_ba;
 
 	vector<vector< Vector3d> > Points_progressive_solutions_multi;
 	vector<vector< bool> > Valid_progressive_solutions_multi;
 
+	// can delete this?  todo
 	vector<double> average_rae_multi;
 	vector<double> median_rae_multi;
 	vector<double> stddev_rae_multi;
@@ -126,6 +126,7 @@ public:
 	vector<int> time_f_vars;
 
 	vector<single_relationship_container> singles;
+	vector<double> camera_uncertainity_score;
 
 
 	vector<double> summed_c1_cost_function_error_by_type;
@@ -202,7 +203,7 @@ public:
 	void WriteCameraCalibrationResult(GroundTruthData* GTD, vector<string>& camera_names,
 			vector<Matrix4d>& ext_to_use, string filename, int rows);
 
-	void ReconstructionAccuracyErrorAndWrite(string write_dir, int current_item, vector<CameraCali*>& CCV,
+	void ReconstructionAccuracyErrorAndWriteI(string write_dir, int current_item, vector<CameraCali*>& CCV,
 			double* camera_params, ofstream& out, GroundTruthData* GTD);
 
 	void WriteSolutionAssessError(string write_directory, vector<string>& camera_names, vector<CameraCali*>& CCV, int type,

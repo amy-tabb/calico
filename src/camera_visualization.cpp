@@ -337,7 +337,6 @@ int create_camera(Matrix3d& internal, Matrix4d& external, float camera_size, int
 	}
 
 
-	//C = -R.inverse()*t;
 	C = -R.transpose()*t;
 
 	create_camera(internal, external, C, r, g, b, rows, cols, ply_file, camera_size);
