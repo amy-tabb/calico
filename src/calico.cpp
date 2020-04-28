@@ -82,7 +82,7 @@ int main(int argc, char **argv){
 
 
 		if (print_help == 1){
-			cout << "Printing help for calico"<< endl;
+			cout << "Printing help for calico, version 1.1, April 2020."<< endl;
 
 			cout << "ESSENTIAL FUNCTIONALITY -------------------" << endl;
 			cout << std::left << setw(30) << "--verbose" << "No arguments.  Writes additional information during the run." << endl;
