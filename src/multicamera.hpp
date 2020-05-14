@@ -26,11 +26,9 @@ public:
 
 	single_relationship_container(int l);
 
-	int count_var_number_rhs(vector<int>& V_index, int p_star, int t_star);
+	int count_var_number_rhs(const vector<int>& V_index, int p_star, int t_star) const;
 };
 
-
-void SolveWithShahsMethod(Matrix4d& Result, vector<Matrix4d>& LHS, vector<Matrix4d>& RHS, bool verbose);
 
 class GroundTruthData{
 
@@ -49,9 +47,9 @@ public:
 
 	vector<Vector3d> points_rel; // points computed wrt to the pattern transformations.
 
-	GroundTruthData(string input);
+	GroundTruthData(const string& input);
 
-	void ComputeRelativeToExemplar(int p_star, int t_star, string outputdir, PatternsCreated* P_class);
+	void ComputeRelativeToExemplar(int p_star, int t_star, const string& outputdir, PatternsCreated* P_class);
 };
 
 
@@ -60,18 +58,18 @@ public:
 
 	int number_images;
 
-	int p_star();
-	int t_star();
+	int p_star() const;
+	int t_star() const;
 
-	int NumberTimes();
-	int NumberPatterns();
-	int NumberVariables();
-	int NumberSingles();
-	int NumberCameras();
+	int NumberTimes() const;
+	int NumberPatterns() const;
+	int NumberVariables() const;
+	int NumberSingles() const;
+	int NumberCameras() const;
 	int NumberUninitialized();
 	int RemainingToFillIn();
 
-	MCcali(vector<CameraCali*>& CCV, PatternsCreated& P_class, int max_number_images_to_use, ofstream& out,
+	MCcali(vector<CameraCali*>& CCV, const PatternsCreated& P_class, int max_number_images_to_use, ofstream& out,
 			int synchronized_rotating_option);
 
 	vector<int> A_camera_indices;
@@ -110,7 +108,6 @@ public:
 	vector<vector< Vector3d> > Points_progressive_solutions_multi;
 	vector<vector< bool> > Valid_progressive_solutions_multi;
 
-	// can delete this?  todo
 	vector<double> average_rae_multi;
 	vector<double> median_rae_multi;
 	vector<double> stddev_rae_multi;
@@ -159,74 +156,79 @@ public:
 	vector<double> median_whole_error;
 
 
-	bool AllInitialized(vector<int>& side);
+	bool AllInitialized(const vector<int>& side);
 
 	bool CanSolveSystem();
 
-	pair<int, int> SelectNextPstarTstar();
+	// remove
+	//pair<int, int> SelectNextPstarTstar();
 
 	void InitializeNumberOccurrences();
 
 	int SelectVarToIterativelySolve();
 
-	VAR_TYPE ReturnVarType(int index);
+	VAR_TYPE ReturnVarType(int index) const;
 
 	bool IterativelySolveForVariables1(ofstream& out, int& solved_var, bool verbose);
 
 	void UpdateSinglesOpenFlag();
 
-	void MinimizeReprojectionErrorMC(vector<CameraCali*>& CCV, double* camera_params, ofstream& out, int start_id,
+	void MinimizeReprojectionErrorMC(const vector<CameraCali*>& CCV, double* camera_params, ofstream& out, int start_id,
 			int end_id, bool use_all_points_present);
 
-	void CreateTAequalsBproblem(int var_to_solve, vector<int>& rel_equations, vector<Matrix4d>& LHS, vector<Matrix4d>& RHS, bool verbose);
+	void CreateTAequalsBproblem(int var_to_solve, const vector<int>& rel_equations, vector<Matrix4d>& LHS,
+	        vector<Matrix4d>& RHS, bool verbose);
 
-	void WriteCalibrationFileForSimulatedCamerasAtAllTimes(string write_directory,  vector<CameraCali*>& CCV);
+	void WriteCalibrationFileForSimulatedCamerasAtAllTimes(const string& write_directory, const vector<CameraCali*>& CCV);
 
-	void SubstitutePTstar(string write_dir, bool write_docs, int iter);
+	void SubstitutePTstar(const string& write_dir, bool write_docs, int iter);
 
-	int BuildCostFunctionAndGraphWithTestAndDegenerateInitialize(vector<CameraCali*>& CCV,
-			ofstream& out, string write_dir, bool write_docs);
+	int BuildCostFunctionAndGraphWithTestAndDegenerateInitialize(const vector<CameraCali*>& CCV,
+			ofstream& out, const string& write_dir, bool write_docs);
 
 	void InitializeNumberOccurrencesAndInitialization();
 
-	void WriteLatex(string write_dir, string descriptor, bool write_exemplars = true);
+	void WriteLatex(const string& write_dir, const string& descriptor, bool write_exemplars = true);
 
-	void WriteASide(vector<int>& side, ofstream& out, bool write_exemplars = true);
+	void WriteASide(const vector<int>& side, ofstream& out, bool write_exemplars = true);
 
-	Matrix4d MultiplyInitializedValuesOnSideUseThisSolution(vector<int>& side, vector<Matrix4d>& this_solution);
+	Matrix4d MultiplyInitializedValuesOnSideUseThisSolution(const vector<int>& side, const vector<Matrix4d>& this_solution);
 
 	void SumOccurrencesSingles();
 
-	void WriteCameraCalibrationResult(vector<CameraCali*>& CCV, vector<string>& camera_names,
-			vector<Matrix4d>& ext_to_use, string filename);
+	void WriteCameraCalibrationResult(const vector<CameraCali*>& CCV, const vector<string>& camera_names,
+			const vector<Matrix4d>& ext_to_use, const string& filename);
 
-	void WriteCameraCalibrationResult(GroundTruthData* GTD, vector<string>& camera_names,
-			vector<Matrix4d>& ext_to_use, string filename, int rows);
+	void WriteCameraCalibrationResult(const GroundTruthData* GTD, const vector<string>& camera_names,
+			const vector<Matrix4d>& ext_to_use, const string& filename, int rows);
 
-	void ReconstructionAccuracyErrorAndWriteI(string write_dir, int current_item, vector<CameraCali*>& CCV,
-			double* camera_params, ofstream& out, GroundTruthData* GTD);
+	void ReconstructionAccuracyErrorAndWriteI(const string& write_dir, int current_item, const vector<CameraCali*>& CCV,
+			double* camera_params, ofstream& out, const GroundTruthData* GTD);
 
-	void WriteSolutionAssessError(string write_directory, vector<string>& camera_names, vector<CameraCali*>& CCV, int type,
-			GroundTruthData* GTD,
+	void WriteSolutionAssessError(const string& write_directory, const vector<string>& camera_names,
+	        const vector<CameraCali*>& CCV, int type,
+			const GroundTruthData* GTD,
 			bool rotating, bool write, float camera_size, float track_size );
 
-	void WriteSimulatedCamerasAtAllTimes(string write_directory,  string current_dir, vector<CameraCali*>& CCV,
-			float camera_size, float track_size, vector<Matrix4d>& vector_to_use);
+	void WriteSimulatedCamerasAtAllTimes(const string& write_directory,  const string& current_dir,
+	        const vector<CameraCali*>& CCV,
+			float camera_size, float track_size, const vector<Matrix4d>& vector_to_use);
 
-	void WriteSimulatedCamerasForRotatingCase(string write_directory, string current_dir, vector<CameraCali*>& CCV,
-			float camera_size, float track_size, vector<Matrix4d>& vector_to_use);
+	void WriteSimulatedCamerasForRotatingCase(const string& write_directory, const string& current_dir,
+	        const vector<CameraCali*>& CCV,
+			float camera_size, float track_size, const vector<Matrix4d>& vector_to_use);
 
-	void OutputRunResults(string filename);
+	void OutputRunResults(const string& filename);
 
-	void OutputVariablesWithInitialization(string filename, int type);
+	void OutputVariablesWithInitialization(const string& filename, int type);
 
-	bool IsPstar(int p);
+	bool IsPstar(int p) const;
 
-	bool IsTstar(int t);
+	bool IsTstar(int t) const;
 
-	void SelectKPointsForMinimization(vector<CameraCali*>& CCV, int selectedk);
+	void SelectKPointsForMinimization(const vector<CameraCali*>& CCV, int selectedk);
 
-	void AssessCamerasWRTGroundTruth(GroundTruthData* GTD, int soln_number);
+	void AssessCamerasWRTGroundTruth(const GroundTruthData* GTD, int soln_number);
 
 	bool SolveClique(std::ofstream& out);
 private:
@@ -241,13 +243,17 @@ private:
 	bool synch_rot_option;
 };
 
-double AssessRotationError(vector<Matrix4d>& Cgts, vector<Matrix4d>& Cnews, int number_Cs, double& stddev, double& median);
+double AssessRotationError(const vector<Matrix4d>& Cgts, const vector<Matrix4d>& Cnews, int number_Cs,
+        double& stddev, double& median);
 
-double AssessRotationErrorAxisAngle(vector<Matrix4d>& Cgts, vector<Matrix4d>& Cnews, int number_Cs, double& stddev, double& median);
+double AssessRotationErrorAxisAngle(const vector<Matrix4d>& Cgts, const vector<Matrix4d>& Cnews,
+        int number_Cs, double& stddev, double& median);
 
-double AssessTranslationError(vector<Matrix4d>& Cgts, vector<Matrix4d>& Cnews, int number_Cs, double& stddev, double& median);
+double AssessTranslationError(const vector<Matrix4d>& Cgts, const vector<Matrix4d>& Cnews,
+        int number_Cs, double& stddev, double& median);
 
-double AssessErrorWhole(vector<Matrix4d>& Cgts, vector<Matrix4d>& Cnews, int number_Cs, double& stddev, double& median);
+double AssessErrorWhole(const vector<Matrix4d>& Cgts, const vector<Matrix4d>& Cnews,
+        int number_Cs, double& stddev, double& median);
 
 
 #endif /* MULTICAMERA_HPP_ */

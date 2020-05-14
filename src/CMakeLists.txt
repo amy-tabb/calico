@@ -3,7 +3,8 @@ cmake_minimum_required(VERSION 3.0)
 project(calico)
 
 # set the flags, may want to add/change debugging or optimization (-O3) flags as appropriate
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp -Wall -pedantic -Wextra -std=c++11 ")
+# set(CMAKE_CXX_COMPILER "/usr/bin/g++")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp -Wall -pedantic -Wextra -O3 -std=c++11 ")
 
 find_package (Eigen3 3.3 REQUIRED NO_MODULE)
 find_package(Ceres REQUIRED)

@@ -18,38 +18,38 @@ bool IsValue(int exemplar, int newvalue){
 }
 
 
-bool MCcali::IsPstar(int p){
+bool MCcali::IsPstar(int p) const{
 	return p == p_s;
 }
 
-bool MCcali::IsTstar(int t){
+bool MCcali::IsTstar(int t) const{
 	return t == t_s;
 }
 
 
-int MCcali::p_star(){
+int MCcali::p_star() const{
 	return p_s;
 }
 
-int MCcali::t_star(){
+int MCcali::t_star() const{
 	return t_s;
 }
 
-int MCcali::NumberTimes(){
+int MCcali::NumberTimes() const{
 	return tn;
 }
 
-int MCcali::NumberPatterns(){
+int MCcali::NumberPatterns() const{
 	return pn;
 }
-int MCcali::NumberVariables(){
+int MCcali::NumberVariables() const {
 	return vn;
 }
-int MCcali::NumberSingles(){
+int MCcali::NumberSingles() const{
 	return an;
 }
 
-int MCcali::NumberCameras(){
+int MCcali::NumberCameras() const{
 	return cn;
 }
 
@@ -83,7 +83,8 @@ bool MCcali::CanSolveSystem(){
 	return count == 0;
 }
 
-MCcali::MCcali(vector<CameraCali*>& CCV, PatternsCreated& P_class, int max_number_images_to_use,
+// CCV objects are updated, though not added to.
+MCcali::MCcali(vector<CameraCali*>& CCV, const PatternsCreated& P_class, int max_number_images_to_use,
 		ofstream& out, int synchronized_rotating_option){
 
 	// need to select the exemplar pattern and time using CCV.
@@ -205,7 +206,7 @@ MCcali::MCcali(vector<CameraCali*>& CCV, PatternsCreated& P_class, int max_numbe
 
 }
 
-void MCcali::SubstitutePTstar(string write_dir, bool write_docs, int iter){
+void MCcali::SubstitutePTstar(const string& write_dir, bool write_docs, int iter){
 
 
 	int p_graph_index;
@@ -318,7 +319,7 @@ int MCcali::SelectVarToIterativelySolve(){
 	return -1;
 }
 
-VAR_TYPE MCcali::ReturnVarType(int index){
+VAR_TYPE MCcali::ReturnVarType(int index) const {
 
 
 	if (index < 0 || index > vn + 1){
@@ -330,7 +331,7 @@ VAR_TYPE MCcali::ReturnVarType(int index){
 }
 
 
-void MCcali::CreateTAequalsBproblem(int var_to_solve, vector<int>& rel_equations, vector<Matrix4d>& LHS, vector<Matrix4d>& RHS, bool verbose){
+void MCcali::CreateTAequalsBproblem(int var_to_solve, const vector<int>& rel_equations, vector<Matrix4d>& LHS, vector<Matrix4d>& RHS, bool verbose){
 
 	// at the conclusion, can solve this with Shah or ceres method or whatever else.
 	//Format is VAR Known_Constant_LHS = Known_Constant_RHS
@@ -825,7 +826,7 @@ bool MCcali::IterativelySolveForVariables1(ofstream& out, int& solved_var, bool 
 }
 
 
-void MCcali::SelectKPointsForMinimization(vector<CameraCali*>& CCV, int selectedk){
+void MCcali::SelectKPointsForMinimization(const vector<CameraCali*>& CCV, int selectedk){
 
 	// this is for an individual.
 	int camera_index, pattern_graph_index, pattern_superscript, time_graph_index, time_superscript;
@@ -1071,7 +1072,7 @@ bool MCcali::SolveClique(std::ofstream& out){
 
 }
 
-void MCcali::MinimizeReprojectionErrorMC(vector<CameraCali*>& CCV, double* camera_params, ofstream& out,
+void MCcali::MinimizeReprojectionErrorMC(const vector<CameraCali*>& CCV, double* camera_params, ofstream& out,
 		int start_id, int end_id,
 		bool use_all_points_present){
 	vector<bool> minimize_bit_vector(NumberVariables(), true);
@@ -1079,20 +1080,6 @@ void MCcali::MinimizeReprojectionErrorMC(vector<CameraCali*>& CCV, double* camer
 	/// do not change the two exemplars, or anything that is not initialized.
 	int t_ex_graph = t_star() + cn + pn;
 	int p_ex_graph = p_star() + cn;
-
-	// todo check this -- since minimize --- rewrite to make better.
-	//	for (int i = 0; i < NumberVariables(); i++){
-	//		if (V_has_initialization[i] == false){
-	//
-	//
-	//		}	else {
-	//			if (i == t_ex_graph || i == p_ex_graph){
-	//				minimize_bit_vector[i] = false;
-	//			}
-	//		}
-	//
-	//	}
-
 
 	for (int i = 0; i < NumberVariables(); i++){
 		if (V_has_initialization[i] == true){
@@ -1117,8 +1104,8 @@ double StdDeviation(vector<double>& v, double m)
 	return sqrt(E/n);
 }
 
-void MCcali::ReconstructionAccuracyErrorAndWriteI(string write_dir, int current_item, vector<CameraCali*>& CCV,
-		double* camera_params, ofstream& out, GroundTruthData* GTD){
+void MCcali::ReconstructionAccuracyErrorAndWriteI(const string& write_dir, int current_item, const vector<CameraCali*>& CCV,
+		double* camera_params, ofstream& out, const GroundTruthData* GTD){
 
 	// input checking
 	if (current_item < 0 && GTD == 0){
@@ -1388,8 +1375,8 @@ void MCcali::ReconstructionAccuracyErrorAndWriteI(string write_dir, int current_
 	Valid_progressive_solutions_strict.push_back(valid_reconstructed_points);
 }
 
-int MCcali::BuildCostFunctionAndGraphWithTestAndDegenerateInitialize(vector<CameraCali*>& CCV,
-		ofstream& out, string write_dir, bool write_docs){
+int MCcali::BuildCostFunctionAndGraphWithTestAndDegenerateInitialize(const vector<CameraCali*>& CCV,
+		ofstream& out, const string& write_dir, bool write_docs){
 
 	if (synch_rot_option == true){
 
@@ -1584,7 +1571,7 @@ int MCcali::BuildCostFunctionAndGraphWithTestAndDegenerateInitialize(vector<Came
 	return sum_not_in;
 }
 
-void MCcali::WriteASide(vector<int>& side, ofstream& out, bool write_exemplars){
+void MCcali::WriteASide(const vector<int>& side, ofstream& out, bool write_exemplars){
 
 	bool has_p;
 	bool has_t;
@@ -1659,8 +1646,8 @@ void MCcali::WriteASide(vector<int>& side, ofstream& out, bool write_exemplars){
 }
 
 
-void MCcali::WriteCameraCalibrationResult(vector<CameraCali*>& CCV, vector<string>& camera_names,
-		vector<Matrix4d>& ext_to_use, string filename){
+void MCcali::WriteCameraCalibrationResult(const vector<CameraCali*>& CCV, const vector<string>& camera_names,
+		const vector<Matrix4d>& ext_to_use, const string& filename){
 
 	ofstream out;
 	out.open(filename.c_str());
@@ -1703,8 +1690,8 @@ void MCcali::WriteCameraCalibrationResult(vector<CameraCali*>& CCV, vector<strin
 }
 
 
-void MCcali::WriteCameraCalibrationResult(GroundTruthData* GTD, vector<string>& camera_names,
-		vector<Matrix4d>& ext_to_use, string filename, int rows){
+void MCcali::WriteCameraCalibrationResult(const GroundTruthData* GTD, const vector<string>& camera_names,
+		const vector<Matrix4d>& ext_to_use, const string& filename, int rows){
 
 	// we will choose different versions to write ... intial, first cost, second cost, etc.
 	ofstream out;
@@ -1748,7 +1735,7 @@ void MCcali::WriteCameraCalibrationResult(GroundTruthData* GTD, vector<string>& 
 
 }
 
-void MCcali::WriteLatex(string write_dir, string descriptor, bool write_exemplars){
+void MCcali::WriteLatex(const string& write_dir, const string& descriptor, bool write_exemplars){
 
 
 	/// if we have a var with graph index vn, do not draw. Just a placeholder.
@@ -1866,7 +1853,12 @@ void MCcali::WriteLatex(string write_dir, string descriptor, bool write_exemplar
 	out.close();
 
 	string command = string("pdflatex ") +  " -output-directory=" + write_dir + " " + filename + " > pdflatexlog.out";
-	system(command.c_str());
+	int ret_val = system(command.c_str());
+
+	if (ret_val != 0){
+	    cout << "error with " << command << endl;
+	    cout << "at " << __LINE__ << " of " << __FILE__ << endl;
+	}
 
 }
 
@@ -1885,9 +1877,9 @@ void MCcali::SumOccurrencesSingles(){
 
 	bool has_p;
 	bool has_t;
-	int p_graph_index;
-	int t_graph_index;
-	int c_graph_index;
+	int p_graph_index = -1;
+	int t_graph_index = -1;
+	int c_graph_index = -1;
 
 	for (int i = 0; i < vn; i++){
 		V_number_occurrences[i] = 0;
@@ -1939,7 +1931,7 @@ single_relationship_container::single_relationship_container(int l){
 	rhs.resize(3, -1); /// initialize to Identity;
 }
 
-int single_relationship_container::count_var_number_rhs(vector<int>& V_index, int p_star, int t_star){
+int single_relationship_container::count_var_number_rhs(const vector<int>& V_index, int p_star, int t_star) const{
 
 	int number_present = 0;
 
@@ -1954,7 +1946,7 @@ int single_relationship_container::count_var_number_rhs(vector<int>& V_index, in
 }
 
 
-Matrix4d MCcali::MultiplyInitializedValuesOnSideUseThisSolution(vector<int>& side, vector<Matrix4d>& this_solution){
+Matrix4d MCcali::MultiplyInitializedValuesOnSideUseThisSolution(const vector<int>& side, const vector<Matrix4d>& this_solution){
 
 	Matrix4d AM;
 	Matrix4d RM;
@@ -1978,8 +1970,9 @@ Matrix4d MCcali::MultiplyInitializedValuesOnSideUseThisSolution(vector<int>& sid
 	return  RM;
 }
 
-void MCcali::WriteSimulatedCamerasAtAllTimes(string write_directory, string current_dir, vector<CameraCali*>& CCV,
-		float camera_size, float track_size, vector<Matrix4d>& vector_to_use){
+void MCcali::WriteSimulatedCamerasAtAllTimes(const string& write_directory, const string& current_dir,
+        const vector<CameraCali*>& CCV,
+		float camera_size, float track_size, const vector<Matrix4d>& vector_to_use){
 
 	Matrix4d ProposedMat;
 	Matrix4d TimeMat;
@@ -2037,8 +2030,9 @@ void MCcali::WriteSimulatedCamerasAtAllTimes(string write_directory, string curr
 
 }
 
-void MCcali::WriteSimulatedCamerasForRotatingCase(string write_directory, string current_dir, vector<CameraCali*>& CCV,
-		float camera_size, float track_size, vector<Matrix4d>& vector_to_use){
+void MCcali::WriteSimulatedCamerasForRotatingCase(const string& write_directory, const string& current_dir,
+        const vector<CameraCali*>& CCV,
+		float camera_size, float track_size, const vector<Matrix4d>& vector_to_use){
 
 	Matrix4d ProposedMat;
 	Matrix4d TimeMat;
@@ -2110,7 +2104,7 @@ void MCcali::WriteSimulatedCamerasForRotatingCase(string write_directory, string
 }
 
 
-void MCcali::WriteCalibrationFileForSimulatedCamerasAtAllTimes(string write_directory,  vector<CameraCali*>& CCV){
+void MCcali::WriteCalibrationFileForSimulatedCamerasAtAllTimes(const string& write_directory,  const vector<CameraCali*>& CCV){
 
 	string descriptor = "initialization";
 
@@ -2237,7 +2231,7 @@ void MCcali::WriteCalibrationFileForSimulatedCamerasAtAllTimes(string write_dire
 }
 
 
-bool MCcali::AllInitialized(vector<int>& side){
+bool MCcali::AllInitialized(const vector<int>& side){
 	for (int j = 1; j < 3; j++){
 		if (V_has_initialization[side[j]] == false){
 			return false;
@@ -2247,7 +2241,7 @@ bool MCcali::AllInitialized(vector<int>& side){
 	return true;
 }
 
-GroundTruthData::GroundTruthData(string input){
+GroundTruthData::GroundTruthData(const string& input){
 
 	string filename = input + "CameraTransformations.txt";
 	ifstream in(filename.c_str());
@@ -2364,7 +2358,7 @@ GroundTruthData::GroundTruthData(string input){
 	in.close();
 }
 
-void GroundTruthData::ComputeRelativeToExemplar(int p_star, int t_star, string outputdir, PatternsCreated* P_class){
+void GroundTruthData::ComputeRelativeToExemplar(int p_star, int t_star, const string& outputdir, PatternsCreated* P_class){
 
 	string filename;
 
@@ -2465,7 +2459,7 @@ void GroundTruthData::ComputeRelativeToExemplar(int p_star, int t_star, string o
 	}
 }
 
-void MCcali::AssessCamerasWRTGroundTruth(GroundTruthData* GTD, int soln_number){
+void MCcali::AssessCamerasWRTGroundTruth(const GroundTruthData* GTD, int soln_number){
 
 	int current_n = average_rot_angle_error.size();
 	std_rot_angle_error.push_back(0);
@@ -2502,8 +2496,9 @@ void MCcali::AssessCamerasWRTGroundTruth(GroundTruthData* GTD, int soln_number){
 }
 
 
-void MCcali::WriteSolutionAssessError(string write_directory, vector<string>& camera_names, vector<CameraCali*>& CCV, int type,
-		GroundTruthData* GTD, bool rotating, bool write, float camera_size, float track_size ){
+void MCcali::WriteSolutionAssessError(const string& write_directory, const vector<string>& camera_names,
+        const vector<CameraCali*>& CCV, int type,
+		const GroundTruthData* GTD, bool rotating, bool write, float camera_size, float track_size ){
 	// last two are empty if the dataset is not simulated.
 
 	type_recorder.push_back(type);
@@ -2577,14 +2572,11 @@ void MCcali::WriteSolutionAssessError(string write_directory, vector<string>& ca
 
 	string current_dir = "cameras-" + descriptor;
 
-	command = "mkdir " + write_directory + current_dir;
-	system(command.c_str());
+	mkdir((write_directory + current_dir).c_str(),  S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
 
 	string cam_dir = write_directory + current_dir + "/single_cameras";
 
-	command = "mkdir " + cam_dir;
-	system(command.c_str());
-	cout << "Command " << command << endl;
+	mkdir(cam_dir.c_str(),  S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
 
 	vector<Matrix3d> internals;
 	vector<Matrix4d> externals;
@@ -2796,7 +2788,7 @@ void MCcali::WriteSolutionAssessError(string write_directory, vector<string>& ca
 
 }
 
-void MCcali::OutputVariablesWithInitialization(string filename, int type){
+void MCcali::OutputVariablesWithInitialization(const string& filename, int type){
 
 	ofstream out;
 	out.open(filename.c_str());
@@ -2854,7 +2846,7 @@ void MCcali::OutputVariablesWithInitialization(string filename, int type){
 }
 
 
-void MCcali::OutputRunResults(string filename){
+void MCcali::OutputRunResults(const string& filename){
 
 	ofstream out;
 	out.open(filename.c_str());
@@ -2972,7 +2964,8 @@ void MCcali::OutputRunResults(string filename){
 
 }
 
-double AssessRotationError(vector<Matrix4d>& Cgts, vector<Matrix4d>& Cnews, int number_Cs, double& stddev, double& median){
+double AssessRotationError(const vector<Matrix4d>& Cgts, const vector<Matrix4d>& Cnews, int number_Cs,
+        double& stddev, double& median){
 	double error = 0;
 	double local_error = 0;
 
@@ -3012,7 +3005,7 @@ double AssessRotationError(vector<Matrix4d>& Cgts, vector<Matrix4d>& Cnews, int 
 }
 
 
-double AssessRotationErrorAxisAngle(vector<Matrix4d>& Cgts, vector<Matrix4d>& Cnews,
+double AssessRotationErrorAxisAngle(const vector<Matrix4d>& Cgts, const vector<Matrix4d>& Cnews,
 		int number_Cs, double& stddev, double& median){
 	double error = 0;
 
@@ -3070,7 +3063,7 @@ double AssessRotationErrorAxisAngle(vector<Matrix4d>& Cgts, vector<Matrix4d>& Cn
 	return mu;
 }
 
-double AssessTranslationError(vector<Matrix4d>& Cgts, vector<Matrix4d>& Cnews, int number_Cs,
+double AssessTranslationError(const vector<Matrix4d>& Cgts, const vector<Matrix4d>& Cnews, int number_Cs,
 		double& stddev, double& median){
 	double error = 0;
 
@@ -3109,7 +3102,7 @@ double AssessTranslationError(vector<Matrix4d>& Cgts, vector<Matrix4d>& Cnews, i
 	return mu;
 }
 
-double AssessErrorWhole(vector<Matrix4d>& Cgts, vector<Matrix4d>& Cnews, int number_Cs, double& stddev, double& median){
+double AssessErrorWhole(const vector<Matrix4d>& Cgts, const vector<Matrix4d>& Cnews, int number_Cs, double& stddev, double& median){
 	double error = 0;
 	Matrix4d H;
 

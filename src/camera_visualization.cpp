@@ -7,7 +7,7 @@
 
 #include "camera_visualization.hpp"
 
-void camera(Matrix3d& Kinv, float max_u, float max_v, float mag, vector< Vector3d >& vertex_coordinates ) {
+void camera(const Matrix3d& Kinv, float max_u, float max_v, float mag, vector< Vector3d >& vertex_coordinates ) {
 
 	Vector3d a;
 	Vector3d b;
@@ -37,7 +37,7 @@ void camera(Matrix3d& Kinv, float max_u, float max_v, float mag, vector< Vector3
 
 
 int create_camera(vector< Vector3d >& vertex_coordinates, vector< vector<int> >& face_indices,
-		Matrix3d& internal, Matrix4d& external, Vector3d& C, int rows, int cols, float camera_size)
+		const Matrix3d& internal, const Matrix4d& external, const Vector3d& C, int rows, int cols, float camera_size)
 {
 	//////////////////////////roi box///////////////////////////////////
 
@@ -140,8 +140,9 @@ int create_camera(vector< Vector3d >& vertex_coordinates, vector< vector<int> >&
 	return 0;
 }
 
-int create_camera(Matrix3d& internal, Matrix4d& external, Vector3d& C, int r, int g, int b, int rows, int cols,
-		string ply_file, float camera_size)
+int create_camera(const Matrix3d& internal, const Matrix4d& external, const Vector3d& C, int r, int g, int b,
+        int rows, int cols,
+		const string& ply_file, float camera_size)
 {
 	vector< Vector3d > vertex_coordinates;
 	vector< Vector3d > vertex_normals;
@@ -300,7 +301,7 @@ int create_camera(Matrix3d& internal, Matrix4d& external, Vector3d& C, int r, in
 
 }
 
-Vector3d ReturnCenter(Matrix4d& external){
+Vector3d ReturnCenter(const Matrix4d& external){
 
 	Vector3d C;
 	Vector3d t;
@@ -321,7 +322,8 @@ Vector3d ReturnCenter(Matrix4d& external){
 
 }
 
-int create_camera(Matrix3d& internal, Matrix4d& external, float camera_size, int r, int g, int b, int rows, int cols, string ply_file){
+int create_camera(const Matrix3d& internal, const Matrix4d& external, float camera_size, int r, int g, int b,
+        int rows, int cols, const string& ply_file){
 
 
 	Vector3d C;
@@ -344,8 +346,8 @@ int create_camera(Matrix3d& internal, Matrix4d& external, float camera_size, int
 	return 0;
 }
 
-int create_cameras(vector<Matrix3d>& internal, vector<Matrix4d>& external, int r, int g, int b, int rows,
-		int cols, string ply_file, float camera_size){
+int create_cameras(const vector<Matrix3d>& internal, const vector<Matrix4d>& external, int r, int g, int b, int rows,
+		int cols, const string& ply_file, float camera_size){
 
 	vector< Vector3d > vertex_coordinates;
 	vector< vector<int> > face_indices;
@@ -443,7 +445,8 @@ int create_cameras(vector<Matrix3d>& internal, vector<Matrix4d>& external, int r
 	return 0;
 }
 
-int create_tracks(vector<Vector3d>& one_track, int r, int g, int b, float offset, Vector3d offset_vector, string ply_file){
+int create_tracks(vector<Vector3d>& one_track, int r, int g, int b, float offset,
+        const Vector3d& offset_vector, const string& ply_file){
 
 	vector< Vector3d > vertex_coordinates;
 	vector< vector<int> > face_indices;
@@ -535,7 +538,8 @@ int create_tracks(vector<Vector3d>& one_track, int r, int g, int b, float offset
 
 
 
-void WritePatterns(vector<Vector3d>& pattern_points, int chess_h, int chess_w, int index_number, string outfile){
+void WritePatterns(const vector<Vector3d>& pattern_points, int chess_h, int chess_w,
+        int index_number, const string& outfile){
 
 	// each vertex needs a color ....
 	// first, find the range ....
@@ -649,7 +653,8 @@ void WritePatterns(vector<Vector3d>& pattern_points, int chess_h, int chess_w, i
 }
 
 
-void WritePatterns(double* pattern_points, int chess_h, int chess_w, int index_number, string outfile){
+void WritePatterns(double* pattern_points, int chess_h, int chess_w, int index_number,
+        const string& outfile){
 
 	// each vertex needs a color ....
 	// first, find the range ....
@@ -762,7 +767,7 @@ void WritePatterns(double* pattern_points, int chess_h, int chess_w, int index_n
 	out.close();
 }
 
-void WritePatternsSkips(vector<Vector3d>& pattern_points, int index_number, string outfile){
+void WritePatternsSkips(const vector<Vector3d>& pattern_points, int index_number, const string& outfile){
 
 	// each vertex needs a color ....
 	// first, find the range ....

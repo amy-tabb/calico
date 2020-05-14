@@ -27,19 +27,20 @@ public:
 	int max_internal_patterns;
 	int internalx, internaly;
 
-	PatternsCreated(string read_dir, string write_dir, bool rotate, string src_file, bool generate_only);
+	PatternsCreated(const string& read_dir, const string& write_dir, bool rotate,
+	        const string& src_file, bool generate_only);
 
-	void DetermineBoardsPresentFromMarkerList(vector<int>& markers, vector<bool>& boards_seen);
-	void DetermineBoardsPresentFromMarkerList(vector<int>& markers, vector<bool>& boards_seen,
-			vector< vector< Point2f > >& corners, vector< vector< vector< Point2f > > >& corners_sorted,
+	void DetermineBoardsPresentFromMarkerList(const vector<int>& markers, vector<bool>& boards_seen);
+	void DetermineBoardsPresentFromMarkerList(const vector<int>& markers, vector<bool>& boards_seen,
+			const vector< vector< Point2f > >& corners, vector< vector< vector< Point2f > > >& corners_sorted,
 			vector< vector<int> >& markers_sorted);
 	int MappingArucoIDToPatternNumber(int id);
 
 	Scalar Color(int index);
 
-	int NumberMarkers();
-	int NumberSquares();
-	int NumberPatterns();
+	int NumberMarkers() const;
+	int NumberSquares() const;
+	int NumberPatterns() const;
 
 	void SetNumberMarkers(int n);
 	void SetNumberPatterns(int n);
@@ -89,38 +90,43 @@ public:
 
 	vector<int> internal_pattern_indices;
 
-	CameraCali(string read_dir, PatternsCreated* P, int max_ext_images, int max_int_images_read, int max_int_images_use);
+	CameraCali(const string& read_dir, PatternsCreated* P, int max_ext_images,
+	        int max_int_images_read, int max_int_images_use);
 
-	void FindCornersCharuco(string write_dir, bool write_internal_images = false);
+	~CameraCali();
 
-	void FindCornersArucoCharuco(string write_dir, bool verbose = true, string verbose_write_dir = "");
+	void FindCornersCharuco(const string& write_dir, bool write_internal_images = false);
 
-	void ReadCorners(string read_dir);
+	void FindCornersArucoCharuco(const string& write_dir, bool verbose = true, string verbose_write_dir = "");
 
-	void ReadCalibration(string read_dir);
+	void ReadCorners(const string& read_dir);
+
+	void ReadCalibration(const string& read_dir);
 
 	void SetUpSelectPointsForMinimization();
 
 	void CalibrateBasic(float initial_focal_px, int zero_tangent_dist, int zero_k3, int fix_principal_point,
-			string write_dir, int number_points_needed_to_count, bool write_internal_images = false);
+			const string& write_dir, int number_points_needed_to_count, bool write_internal_images = false);
 
-	void CalibrateRotatingSet(string write_dir, int number_points_needed_to_count);
+	void CalibrateRotatingSet(const string& write_dir, int number_points_needed_to_count);
 
-	double ComputeReprojectionErrorOneImagePattern(Matrix4d& ExtParameters, int image_number,
-			int pattern_number,  string write_directory, bool write, int equation_number, bool rotating, Matrix3d* IntParameters);
+	double ComputeReprojectionErrorOneImagePattern(const Matrix4d& ExtParameters, int image_number,
+			int pattern_number,  const string& write_directory, bool write, int equation_number,
+			bool rotating, const Matrix3d* IntParameters);
 
-	double ComputeReprojectionErrorOneImagePatternGTDRel(Matrix4d& ExtParameters, int image_number,
+	double ComputeReprojectionErrorOneImagePatternGTDRel(const Matrix4d& ExtParameters, int image_number,
 			int pattern_number,
-			string write_directory, bool write, int equation_number, bool rotating, vector<Vector3d>& points_from_gtd);
+			const string& write_directory, bool write, int equation_number, bool rotating,
+			const vector<Vector3d>& points_from_gtd);
 
-	void ReadExifInformationRotatingSet(string input_dir, string read_dir);
+	void ReadExifInformationRotatingSet(const string& input_dir, const string& read_dir);
 
 	int PointsAtImagePattern(int image_number, int pattern_number);
 
 	int PointsForMinimization(int image_number, int pattern_number);
 };
 
-bool readDetectorParameters(string filename, Ptr<aruco::DetectorParameters> &params);
+bool readDetectorParameters(const string& filename, Ptr<aruco::DetectorParameters> &params);
 
 void WritePatterns(double* pattern_points, int chess_h, int chess_w, int index_number, string outfile);
 
@@ -132,6 +138,6 @@ int CreateStrawberryImagesCharucoExp(vector<Mat>& images, int squaresX, int squa
 int CreateRotateCaseImagesCharuco(vector<Mat>& images, int squaresX, int squaresY, int squareLength, int markerLength,
 		int margins, int id_start_number, int dictionary_version, string src_file);
 
-Matrix3d CopyRotationMatrixFromExternal(Matrix4d& M);
+Matrix3d CopyRotationMatrixFromExternal(const Matrix4d& M);
 
 #endif /* CAMERA_CALIBRATION_HPP_ */

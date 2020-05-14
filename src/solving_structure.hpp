@@ -211,18 +211,18 @@ void PrintMatrix(const T* X, int row0, int col0){
 
 
 
-void CopyFromCalibration(vector<CameraCali*>& CCV, double* camera_params);
+void CopyFromCalibration(const vector<CameraCali*>& CCV, double* camera_params);
 
-void BundleAdjustmentCaliCeres(MCcali& MC, vector<CameraCali*>& CCV, double* camera_params,
+void BundleAdjustmentCaliCeres(MCcali& MC, const vector<CameraCali*>& CCV, double* camera_params,
 		vector<bool>& bit_vector_true_min, std::ofstream& out, int start_id, int end_id, bool use_all_points);
 
-void ReconstructXFunctionIDsMC(MCcali& MC, vector<Matrix4d>& vector_variables, vector<CameraCali*>& CCV, double* camera_params,
+void ReconstructXFunctionIDsMC(MCcali& MC, vector<Matrix4d>& vector_variables, const vector<CameraCali*>& CCV, double* camera_params,
 		vector< Vector3d >& estimated_threed_points, vector< bool >& has_values, std::ofstream& out);
 
-void MinimizeReprojectionError(MCcali& MC, vector<CameraCali*>& CCV, double* camera_params,
+void MinimizeReprojectionError(MCcali& MC, const vector<CameraCali*>& CCV, double* camera_params,
 		vector<bool>& bit_vector_true_min, std::ofstream& out, int start_id, int end_id, bool use_all_points_present);
 
-void SolveWithShahsMethod(Matrix4d& Result, vector<Matrix4d>& LHS, vector<Matrix4d>& RHS, bool verbose);
+void SolveWithShahsMethod(Matrix4d& Result, const vector<Matrix4d>& LHS, const vector<Matrix4d>& RHS, bool verbose);
 
 struct MultiCameraReprojectionError {
 	MultiCameraReprojectionError(double* camera_parameters, double* twoDpoints, double* threeDpoints, double* vars_initial,

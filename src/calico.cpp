@@ -401,25 +401,24 @@ int main(int argc, char **argv){
 }
 
 
-void CreatePatterns(int calibration_context, string input_dir, string output_dir, string src_file){
+void CreatePatterns(int calibration_context, const string& input_dir, const string& output_dir,
+        const string& src_file){
 
 	// calibration context -- 0 for rotating, 1 for network version.
 	// these variables technically not needed, but added for readability.
 	bool rotating = calibration_context == 0;
 
-	string command;
-
 	string pattern_dir = output_dir + "patterns/";
-	command = "mkdir " + pattern_dir;
-	cout << "command ... " << command << endl;
-	system(command.c_str());
+
+	mkdir(pattern_dir.c_str(),  S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
 
 	PatternsCreated P_Class(input_dir, pattern_dir, rotating, src_file, true);
 
 }
 
-void MultipleCameraCalibration(int calibration_context, string input_dir, string output_dir, string src_file,
-		float camera_size, float track_size,  float initial_focal_px, int zero_tangent_dist, int zero_k3, int fix_principal_point,
+void MultipleCameraCalibration(int calibration_context, const string& input_dir, const string& output_dir,
+        const string& src_file,	float camera_size, float track_size,  float initial_focal_px,
+        int zero_tangent_dist, int zero_k3, int fix_principal_point,
 		bool has_ground_truth, bool verbose, bool read_camera_calibration, bool only_camera_calibration,
 		int max_internal_read, int max_internal_use, int max_external_positions, int selectedk,
 		int number_points_needed_to_count_pattern, int synchronized_rotating_option, int interleaved_solve){
@@ -429,7 +428,6 @@ void MultipleCameraCalibration(int calibration_context, string input_dir, string
 	bool rotating = calibration_context == 0;
 	bool network = calibration_context == 1;
 	int number_not_in = 0;
-
 
 	string logfile = output_dir + "logfile.txt";
 	google::InitGoogleLogging(logfile.c_str());
@@ -446,6 +444,7 @@ void MultipleCameraCalibration(int calibration_context, string input_dir, string
 	vector<string> camera_write_dirs;
 	string command;
 
+
 	string filename = output_dir + "trace.txt";
 	ofstream out_trace; out_trace.open(filename.c_str());
 
@@ -455,9 +454,8 @@ void MultipleCameraCalibration(int calibration_context, string input_dir, string
 	out_trace << "Write internal " << write_internals << endl;
 
 	string pattern_dir = output_dir + "patterns/";
-	command = "mkdir " + pattern_dir;
-	cout << "command ... " << command << endl;
-	system(command.c_str());
+
+	mkdir(pattern_dir.c_str(),  S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
 
 	PatternsCreated P_Class(input_dir, pattern_dir, rotating, src_file, false);
 	string temp;  int number_cameras;
@@ -475,24 +473,20 @@ void MultipleCameraCalibration(int calibration_context, string input_dir, string
 	}
 
 	if (!read_camera_calibration){
-		command = "mkdir " + output_dir + "data/";
-		cout << "command ... " << command << endl;
-		system(command.c_str());
+
+		mkdir((output_dir + "data/").c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
 	}
 
 	string verbose_dir = output_dir + "verbose_output/";
 	if (verbose){
-		command = "mkdir " + verbose_dir;
-		cout << "command ... " << command << endl;
-		system(command.c_str());
+
+		mkdir(verbose_dir.c_str(),  S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
 	}
 
 
 	string reconstructed_patterns_dir = output_dir + "reconstructed-patterns/";
-	command = "mkdir " + reconstructed_patterns_dir;
-	cout << "command ... " << command << endl;
-	system(command.c_str());
 
+	mkdir(reconstructed_patterns_dir.c_str(),  S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
 
 	///////////////////////////////////////////////////////////////////////////////////////////
 	////// Stage 1. Calibrate cameras wrt visible cameras at all time instants,
@@ -501,7 +495,6 @@ void MultipleCameraCalibration(int calibration_context, string input_dir, string
 
 	number_cameras = camera_directories.size();
 	out_trace << "After read " << number_cameras << endl;
-
 
 	vector<CameraCali*> CCV(number_cameras, 0);
 
@@ -527,8 +520,8 @@ void MultipleCameraCalibration(int calibration_context, string input_dir, string
 		cout << id_camera_dir << endl;
 		if (rotating){
 			if (!read_camera_calibration){
-				command = "mkdir " + id_camera_dir;
-				system(command.c_str());
+
+				mkdir(id_camera_dir.c_str(),  S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
 
 				CCV[i]->FindCornersArucoCharuco(id_camera_dir, verbose, verbose_dir);
 				CCV[i]->CalibrateRotatingSet(id_camera_dir, number_points_needed_to_count_pattern);
@@ -542,8 +535,9 @@ void MultipleCameraCalibration(int calibration_context, string input_dir, string
 		}	else {
 
 			if (!read_camera_calibration){
-				command = "mkdir " + id_camera_dir;
-				system(command.c_str());
+
+			    mkdir(id_camera_dir.c_str(),  S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+
 				CCV[i]->FindCornersCharuco(id_camera_dir);
 				CCV[i]->CalibrateBasic(initial_focal_px, zero_tangent_dist, zero_k3,
 						fix_principal_point, id_camera_dir, number_points_needed_to_count_pattern);
@@ -566,7 +560,6 @@ void MultipleCameraCalibration(int calibration_context, string input_dir, string
 		out.close();
 
 		exit(1);
-
 	}
 
 	////////////////////////// END CAMERA CALIBRATION ////////////////////////////////////////////

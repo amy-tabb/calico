@@ -19,6 +19,7 @@
 #include <parallel/algorithm>
 #include <iostream>
 #include <algorithm>
+#include <iterator>
 #include <vector>
 #include <set>
 #include <cmath>
@@ -69,7 +70,7 @@ using std::pair;
 #include <chrono>
 
 template<class T>
-T FromString(const std::string& s)
+T FromString(const string& s)
 {
 	std::istringstream stream (s);
 	T t;
@@ -89,7 +90,8 @@ string ToString(T arg)
 }
 
 
-inline void MultiplyMatrixVector(const vector< vector<double> >& M, int rows, int cols, const vector<double>& v, vector<double>& X){
+inline void MultiplyMatrixVector(const vector< vector<double> >& M, int rows, int cols,
+        const vector<double>& v, vector<double>& X){
 
 	int c;
 	// don't test to save time

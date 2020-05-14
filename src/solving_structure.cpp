@@ -9,7 +9,7 @@
 #include "multicamera.hpp"
 #include "camera_visualization.hpp"
 
-void SolveWithShahsMethod(Matrix4d& Result, vector<Matrix4d>& LHS, vector<Matrix4d>& RHS, bool verbose){
+void SolveWithShahsMethod(Matrix4d& Result, const vector<Matrix4d>& LHS, const vector<Matrix4d>& RHS, bool verbose){
 	//Format is VAR Known_Constant_LHS = Known_Constant_RHS
 	// Code from Shah .... YB = A, LHS = B, RHS = A.
 	/// Matrices are stacked side by side [horizontally].
@@ -128,7 +128,7 @@ void SolveWithShahsMethod(Matrix4d& Result, vector<Matrix4d>& LHS, vector<Matrix
 }
 
 // camera params should be 12*number_cameras.
-void CopyFromCalibration(vector<CameraCali*>& CCV, double* camera_params){
+void CopyFromCalibration(const vector<CameraCali*>& CCV, double* camera_params){
 	int number_cameras = CCV.size();
 
 	for (int i = 0; i < number_cameras; i++){
@@ -154,7 +154,7 @@ void CopyFromCalibration(vector<CameraCali*>& CCV, double* camera_params){
 	}
 }
 
-void ReconstructXFunctionIDsMC(MCcali& MC, vector<Matrix4d>& vector_variables, vector<CameraCali*>& CCV, double* camera_params,
+void ReconstructXFunctionIDsMC(MCcali& MC, vector<Matrix4d>& vector_variables, const vector<CameraCali*>& CCV, double* camera_params,
 		vector< Vector3d >& estimated_threed_points, vector< bool >& has_values, std::ofstream& out){
 	// This function solves the optimization problem of estimating the 3D points from 2D points and cameras.
 
@@ -486,7 +486,7 @@ void CeresProblemClass::SolveWriteBackToMC(MCcali& MC, std::ofstream& out, int i
 
 
 	Solver::Options options;
-	options.linear_solver_type = ceres::DENSE_SCHUR;
+	options.linear_solver_type = ceres::DENSE_QR;
 
 	options.minimizer_progress_to_stdout = output_to_terminal;
 	options.num_threads = omp_get_max_threads();
@@ -559,7 +559,7 @@ CeresProblemClass::~CeresProblemClass(){
 }
 
 
-void MinimizeReprojectionError(MCcali& MC, vector<CameraCali*>& CCV, double* camera_params,
+void MinimizeReprojectionError(MCcali& MC, const vector<CameraCali*>& CCV, double* camera_params,
 		vector<bool>& bit_vector_true_min, std::ofstream& out, int start_id, int end_id, bool use_all_points_present){
 
 	/// camera params is initialized and static, b/c we're not going to be altering the camera characteristics.

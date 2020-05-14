@@ -41,17 +41,19 @@ std::string FormatWithCommas(T value)
 }
 
 
-string FindValueOfFieldInFile(string filename, string fieldTag, bool separator, bool kill_if_not_found);
+string FindValueOfFieldInFile(const string& filename, const string& fieldTag, bool separator, bool kill_if_not_found);
 
-string FindMultipleStringValueOfFieldInFile(string filename, string fieldTag, bool separator, bool kill_if_not_found, int number_items);
+string FindMultipleStringValueOfFieldInFile(const string& filename, const string& fieldTag, bool separator, bool kill_if_not_found, int number_items);
 
 void EnsureDirHasTrailingBackslash(string& write_directory);
 
-bool sort_by_x( pair<Point2f, Point2f> p0, pair<Point2f, Point2f> p1);
+bool sort_by_x( const pair<Point2f, Point2f>& p0, const pair<Point2f, Point2f>& p1);
 
-void TestStream(ifstream& in, string filename);
+void TestStream(const ifstream& in, const string& filename);
 
-void TestStream(ofstream& out, string filename);
+void CopyFile(const string& source, const string& destination);
+
+void TestStream(const ofstream& out, const string& filename);
 
 
 #endif /* HELPER_HPP_ */
