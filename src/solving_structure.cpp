@@ -486,7 +486,7 @@ void CeresProblemClass::SolveWriteBackToMC(MCcali& MC, std::ofstream& out, int i
 
 
 	Solver::Options options;
-	options.linear_solver_type = ceres::DENSE_QR;
+	options.linear_solver_type = ceres::DENSE_SCHUR;
 
 	options.minimizer_progress_to_stdout = output_to_terminal;
 	options.num_threads = omp_get_max_threads();

@@ -1152,7 +1152,7 @@ void CameraCali::FindCornersArucoCharuco(const string& write_dir, bool verbose, 
     two_d_point_coordinates_dense.resize(number_images, twod);
     points_present.resize(number_images, vector<bool>(number_squares, false));
 
-#pragma omp parallel for private(b_color, global_index)
+#pragma omp parallel for private(b_color, global_index, filename)
     for (int i = 0; i < number_images; i++){
 
         vector< vector<cv::Point2f> > charuco_corners_all;
@@ -1309,7 +1309,7 @@ void CameraCali::FindCornersCharuco(const string& write_dir, bool write_internal
 
     int internal_found_counter = 0;
 
-#pragma omp parallel for private(b_color, global_index)
+#pragma omp parallel for private(b_color, global_index, filename)
     for (int i = 0; i < number_images; i++){
 
         vector< int > ids;
