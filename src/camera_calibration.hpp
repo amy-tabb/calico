@@ -42,6 +42,7 @@ public:
 	int NumberSquares() const;
 	int NumberPatterns() const;
 
+
 	void SetNumberMarkers(int n);
 	void SetNumberPatterns(int n);
 
@@ -49,6 +50,7 @@ protected:
 	int number_patterns;
 	int number_total_squares;
 	int int_number_markers;
+
 
 };
 
