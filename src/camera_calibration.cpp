@@ -348,7 +348,7 @@ PatternsCreated::PatternsCreated(const string& read_dir, const string& write_dir
 
         // a little hack, to be improved in the next version
         //square_h_w.push_back(pair<int, int>(squaresY[i], squaresX[i]));
-        number_corners_per_pattern =squaresX[0]* squaresY[0]*4;
+
     }	else {
         ////////////////////////////////////////////////////////
         //////// Rotate case, possible internal parameters ///////
@@ -624,7 +624,7 @@ PatternsCreated::PatternsCreated(const string& read_dir, const string& write_dir
         }
 
         number_patterns = number_boards;
-        number_corners_per_pattern =squaresXext* squaresYext*4;
+
     }
 
     // GET 8 COLORS

@@ -300,214 +300,7 @@ void ReconstructXFunctionIDsMC(MCcali& MC, vector<Matrix4d>& vector_variables, c
     A_hats.clear();
 }
 
-//void ReconstructXFunctionIDsMCWithDLTInitials(MCcali& MC, vector<Matrix4d>& vector_variables, const vector<CameraCali*>& CCV, double* camera_params,
-//        vector< Vector3d >& estimated_threed_points, vector< bool >& has_values, std::ofstream& out){
-//    // This function solves the optimization problem of estimating the 3D points from 2D points and cameras.
-//
-//    /// camera params is initialized and static, b/c we're not going to be altering the camera characteristics.
-//    int max_number_obs = CCV[0]->P_class->three_d_points.size();
-//
-//    // checked -- this is dealloc'd at the end of the function.
-//    double* est_threed_vars = new double[max_number_obs*3];
-//
-//    // need to initialize these .... use the DLT to initialize.
-//    for (int i = 0; i < max_number_obs*3; i++){
-//        est_threed_vars[i] = 0;
-//    }
-//
-//    /// find out where there are at least two observations ...
-//    vector< bool > found_one(max_number_obs, false);
-//    has_values.clear();
-//    has_values.resize(max_number_obs, false);
-//    int camera_index, pattern_graph_index, pattern_superscript, time_graph_index, time_superscript;
-//
-//    // will need to dealloc, but this structure will keep everything where I need it while the optimization runs.
-//    vector<double*> A_hats(MC.NumberSingles(), 0);
-//
-//    Matrix4d C, P, T, A_hat;
-//
-//    vector<MatrixXd> KtimesRT(MC.NumberSingles());
-//
-//    // The vector of variables has one temporary variable at the end.
-//    if (MC.NumberVariables() + 1 != int(vector_variables.size())){
-//        cout << "The size of the vector sent to ReconstructXFunctionIDsMC is " << vector_variables.size() << endl;
-//        cout << "the number of variables according to MC.NumberVariables() + 1 is " << MC.NumberVariables() + 1<< endl;
-//        cout << "They should be the same, quitting." << endl;
-//        exit(1);
-//    }
-//
-//    // initialize matrix, so we're not doing that all of the time.
-//    for (int i  = 0; i < MC.NumberSingles(); i++){
-//        if (MC.singles_open[i] == false){ /// means we have an initial value for all of the variables.
-//            // compute an A-hat for this one.
-//            camera_index = MC.singles[i].lhs;
-//
-//            pattern_graph_index = MC.singles[i].rhs[1];
-//            time_graph_index = MC.singles[i].rhs[2];
-//
-//            time_superscript = MC.V_index.at(time_graph_index);
-//            pattern_superscript = MC.V_index.at(pattern_graph_index);
-//
-//            C = vector_variables.at(camera_index);
-//            P = vector_variables.at(pattern_graph_index);
-//            T = vector_variables.at(time_graph_index);
-//
-//            A_hat = C*T.inverse()*P.inverse();
-//
-//            A_hats[i]= new double[16];
-//
-//            for (int r = 0, in = 0; r < 4; r++){
-//                for (int c = 0; c < 4; c++, in++){
-//                    A_hats[i][in] = A_hat(r, c);
-//                }
-//            }
-//
-//            KtimesRT[i] = A_hat.block<3, 4>(0, 0);
-//        }
-//
-//    }
-//    // walk through by number points, estimate the three D points.
-//
-//    double x_coord, y_coord;
-//
-//    int two_d_counter = 0;
-//    int local_time_index = 0;
-//    int number_corners_per = CCV[0]->P_class->NumberPatterns();
-//    int start_j, end_j;
-//
-//    for (int k = 0; k < max_number_obs; k++){
-//        Problem problem;
-//
-//        vector<MatrixXd> PMatrices;
-//        vector<Vector3d> imagePts;
-//        Matrix3d T(3, 3); T.setIdentity();
-//
-//        MatrixXd tempKRT(3, 4);
-//
-//        Vector3d xcam;
-//        two_d_counter = 0;
-//        for (int i  = 0; i < MC.NumberSingles(); i++){
-//            if (MC.singles_open[i] == false){ /// means we have an initial value for all of the variables.
-//                // compute an A-hat for this one.
-//
-//                camera_index = MC.singles[i].lhs;
-//
-//                pattern_graph_index = MC.singles[i].rhs[1];
-//                time_graph_index = MC.singles[i].rhs[2];
-//
-//                time_superscript = MC.V_index.at(time_graph_index);
-//                pattern_superscript = MC.V_index.at(pattern_graph_index);
-//
-//                local_time_index = time_superscript - CCV[camera_index]->start_time_this_camera;
-//
-//                start_j = number_corners_per*pattern_superscript;
-//                end_j = number_corners_per*(pattern_superscript + 1);
-//
-//                // is point k here?
-//                if (k >= start_j && k < end_j){
-//                    if (CCV[camera_index]->points_present[local_time_index].at(k) == true){ // is k detected.
-//
-//                        out << "Camera " << camera_index << " pattern " << pattern_superscript << ", " << time_superscript << endl;
-//
-//
-//                        x_coord = CCV[camera_index]->two_d_point_coordinates_dense[local_time_index](k, 0);
-//                        y_coord = CCV[camera_index]->two_d_point_coordinates_dense[local_time_index](k, 1);
-//
-//                        xcam(0) = x_coord;
-//                        xcam(1) = y_coord;
-//                        xcam(2) = 1;
-//
-////                        T(0, 0) = 2.0/double(CCV[camera_index]->cols);
-////                        T(1, 1) = 2.0/double(CCV[camera_index]->rows);
-////                        T(0, 2) = -1;
-////                        T(1, 2) = -1;
-////
-////                        cout << " T" << endl <<
-//
-//                        //xcam = T*xcam;
-//                        imagePts.push_back(xcam);
-//
-//                        PMatrices.push_back(KtimesRT[i]);
-//
-//                        ceres::CostFunction* cost_function =
-//                                ReconstructXStruct::Create(
-//                                        &camera_params[12*camera_index], &A_hats[i][0],
-//                                        x_coord, y_coord);
-//                        problem.AddResidualBlock(cost_function,
-//                                NULL /* squared loss */,
-//                                &est_threed_vars[k*3]);
-//
-//                        two_d_counter++;
-//                    }
-//                }
-//            }
-//        }
-//
-//
-//
-//        if (two_d_counter >= 2){
-//
-//            MatrixXd LHS(two_d_counter*3, 4+two_d_counter);
-//            LHS.setZero();
-//
-//
-//            for (int tdc = 0; tdc < two_d_counter; tdc++){
-//                // set the block with the camera matrix
-//                LHS.block<3, 4>(tdc*3, 0) = PMatrices[tdc];
-//                LHS(tdc*3, 4 + tdc) = imagePts[tdc](0); // x coord
-//                LHS(tdc*3 + 1, 4 + tdc) = imagePts[tdc](1); // y coord
-//                LHS(tdc*3 + 2, 4 + tdc) = 1; // y coord
-//            }
-//
-//            //cout << __LINE__ << " line " <<  __FILE__ << endl;
-//            JacobiSVD<MatrixXd> svd(LHS, ComputeThinU | ComputeThinV);
-//
-//            MatrixXd V = svd.matrixV();  MatrixXd U = svd.matrixU();
-//
-//            //cout << __LINE__ << " line " <<  __FILE__ << endl;
-//            MatrixXd xstar = V.block<4, 1>(0, V.cols() - 1);
-//            xstar = xstar/xstar(3);
-//
-//            est_threed_vars[k*3] = xstar(0);
-//            est_threed_vars[k*3 + 1] = xstar(1);
-//            est_threed_vars[k*3 + 2] = xstar(2);
-//
-//
-//            has_values[k] = true;
-//            Solver::Options options;
-//            options.linear_solver_type = ceres::DENSE_QR;
-//            options.minimizer_progress_to_stdout = false;
-//            Solver::Summary summary;
-//            ceres::Solve(options, &problem, &summary);
-//
-//            out << endl << k << endl;
-//            out << summary.BriefReport() << endl;
-//        }
-//    }
-//
-//    estimated_threed_points.clear();
-//    estimated_threed_points.resize(max_number_obs, Vector3d());
-//
-//
-//
-//    // this doesn'
-//    for (int i = 0; i < max_number_obs; i++){
-//        estimated_threed_points[i](0) = est_threed_vars[3*i];
-//        estimated_threed_points[i](1) = est_threed_vars[3*i + 1];
-//        estimated_threed_points[i](2) = est_threed_vars[3*i + 2];
-//    }
-//
-//    delete [] est_threed_vars;
-//
-//    // delete all of the transformations.
-//    for (int i = 0; i < MC.NumberSingles(); i++){
-//        if (A_hats[i] != 0){
-//            delete [] A_hats[i];
-//        }
-//    }
-//
-//    A_hats.clear();
-//}
+
 
 
 void ReconstructXFunctionIDsMCwithDLTs(MCcali& MC, vector<Matrix4d>& vector_variables,
@@ -515,396 +308,395 @@ void ReconstructXFunctionIDsMCwithDLTs(MCcali& MC, vector<Matrix4d>& vector_vari
         vector< Vector3d >& estimated_threed_points, vector< bool >& has_values, std::ofstream& out){
     // This function solves the optimization problem of estimating the 3D points from 2D points and cameras.
 
-    cout << "This is " << __LINE__ << "in " << __FILE__ << " DLT initialization experimental. " << endl;
-    // exit(1);
-
 
     /// camera params is initialized and static, b/c we're not going to be altering the camera characteristics.
-    int max_number_obs = CCV[0]->P_class->three_d_points.size();
+       int max_number_obs = CCV[0]->P_class->three_d_points.size();
 
-    // checked -- this is dealloc'd at the end of the function.
-    double* est_threed_vars = new double[max_number_obs*3];
+       // checked -- this is dealloc'd at the end of the function.
+       double* est_threed_vars = new double[max_number_obs*3];
 
-    // need to initialize these .... use the DLT to initialize.
-    for (int i = 0; i < max_number_obs*3; i++){
-        est_threed_vars[i] = 0;
-    }
+       // need to initialize these ....
+       for (int i = 0; i < max_number_obs*3; i++){
+           est_threed_vars[i] = 0;
+       }
 
-    /// find out where there are at least two observations ...
-    vector< bool > found_one(max_number_obs, false);
-    has_values.clear();
-    has_values.resize(max_number_obs, false);
-    int camera_index, pattern_graph_index, pattern_superscript, time_graph_index, time_superscript;
+       /// find out where there are at least two observations ...
+       vector< bool > found_one(max_number_obs, false);
+       has_values.clear();
+       has_values.resize(max_number_obs, false);
+       int camera_index, pattern_graph_index, pattern_superscript, time_graph_index, time_superscript;
 
-    // will need to dealloc, but this structure will keep everything where I need it while the optimization runs.
-    vector<double*> A_hats(MC.NumberSingles(), 0);
+       // will need to dealloc, but this structure will keep everything where I need it while the optimization runs.
+       vector<double*> A_hats(MC.NumberSingles(), 0);
 
-    Matrix4d C, P, T, A_hat;
-    Matrix3d K;
+       Matrix4d C, P, T, A_hat;
 
-    vector<MatrixXd> KtimesRT(MC.NumberSingles());
+       // The vector of variables has one temporary variable at the end.
+       if (MC.NumberVariables() + 1 != int(vector_variables.size())){
+           cout << "The size of the vector sent to ReconstructXFunctionIDsMC is " << vector_variables.size() << endl;
+           cout << "the number of variables according to MC.NumberVariables() + 1 is " << MC.NumberVariables() + 1<< endl;
+           cout << "They should be the same, quitting." << endl;
+           exit(1);
+       }
 
-    // The vector of variables has one temporary variable at the end.
-    if (MC.NumberVariables() + 1 != int(vector_variables.size())){
-        cout << "The size of the vector sent to ReconstructXFunctionIDsMC is " << vector_variables.size() << endl;
-        cout << "the number of variables according to MC.NumberVariables() + 1 is " << MC.NumberVariables() + 1<< endl;
-        cout << "They should be the same, quitting." << endl;
-        exit(1);
-    }
+       vector<MatrixXd> KtimesRT(MC.NumberSingles());
 
-    //cout << __LINE__ << " line " <<  __FILE__ << endl;
-    // initialize matrix, so we're not doing that all of the time.
-    for (int i  = 0; i < MC.NumberSingles(); i++){
-        if (MC.singles_open[i] == false){ /// means we have an initial value for all of the variables.
-            // compute an A-hat for this one.
-            camera_index = MC.singles[i].lhs;
+       // initialize matrix, so we're not doing that all of the time.
+       for (int i  = 0; i < MC.NumberSingles(); i++){
+           if (MC.singles_open[i] == false){ /// means we have an initial value for all of the variables.
+               // compute an A-hat for this one.
+               camera_index = MC.singles[i].lhs;
 
-            pattern_graph_index = MC.singles[i].rhs[1];
-            time_graph_index = MC.singles[i].rhs[2];
+               pattern_graph_index = MC.singles[i].rhs[1];
+               time_graph_index = MC.singles[i].rhs[2];
 
-            time_superscript = MC.V_index.at(time_graph_index);
-            pattern_superscript = MC.V_index.at(pattern_graph_index);
+               time_superscript = MC.V_index.at(time_graph_index);
+               pattern_superscript = MC.V_index.at(pattern_graph_index);
 
-            C = vector_variables.at(camera_index);
-            P = vector_variables.at(pattern_graph_index);
-            T = vector_variables.at(time_graph_index);
+               C = vector_variables.at(camera_index);
+               P = vector_variables.at(pattern_graph_index);
+               T = vector_variables.at(time_graph_index);
 
-            A_hat = C*T.inverse()*P.inverse();
+               A_hat = C*T.inverse()*P.inverse();
 
+               A_hats[i]= new double[16];
 
-            A_hats[i]= new double[16];
+               for (int r = 0, in = 0; r < 4; r++){
+                   for (int c = 0; c < 4; c++, in++){
+                       A_hats[i][in] = A_hat(r, c);
+                   }
+               }
 
-            for (int r = 0, in = 0; r < 4; r++){
-                for (int c = 0; c < 4; c++, in++){
-                    A_hats[i][in] = A_hat(r, c);
-                }
-            }
+               KtimesRT[i] = A_hat.block<3, 4>(0,0);
+               KtimesRT[i].block<3, 1>(0, 3) = KtimesRT[i].block<3, 1>(0, 3)/1000; // mm -> m
 
-            K.setIdentity();
-            K = CCV[camera_index]->internal_parameters;
-            // cout << __LINE__ << " line " <<  __FILE__ << endl;
-            MatrixXd temp = K*A_hat.block<3, 4>(0, 0); // should be a 3x4.
-            A_hat.block<3, 4>(0,0) = temp;
-            //cout << __LINE__ << " line " <<  __FILE__ << endl;
+           }
 
-            KtimesRT[i] = A_hat.block<3, 4>(0, 0);
-        }
+       }
+       // walk through by number points, estimate the three D points.
 
-    }
-    // walk through by number points, estimate the three D points.
+       double x_coord, y_coord;
 
-    //cout << __LINE__ << " line " <<  __FILE__ << endl;
+       int two_d_counter = 0;
+       int local_time_index = 0;
 
+       for (int k = 0; k < max_number_obs; k++){
+           Problem problem;
 
-    double x_coord, y_coord;
+           two_d_counter = 0;
 
-    int two_d_counter = 0;
-    int local_time_index = 0;
-    int number_corners_per = CCV[0]->P_class->NumberCornersPerPattern();
-    int start_j, end_j;
+           vector<MatrixXd> PMatrices;
+           vector<Vector3d> imagePts;
+           Vector3d xcam;
+           Matrix3d T; T.setIdentity();
+           for (int i  = 0; i < MC.NumberSingles(); i++){
+               if (MC.singles_open[i] == false){ /// means we have an initial value for all of the variables.
+                   // compute an A-hat for this one.
 
-    for (int k = 0; k < max_number_obs; k++){
-        Problem problem;
+                   camera_index = MC.singles[i].lhs;
 
-        two_d_counter = 0;
+                   pattern_graph_index = MC.singles[i].rhs[1];
+                   time_graph_index = MC.singles[i].rhs[2];
 
-        vector<MatrixXd> PMatrices;
-        vector<Vector3d> imagePts;
+                   time_superscript = MC.V_index.at(time_graph_index);
+                   pattern_superscript = MC.V_index.at(pattern_graph_index);
 
-        Vector3d xcam;
+                   local_time_index = time_superscript - CCV[camera_index]->start_time_this_camera;
 
-        Matrix3d T; T.setIdentity();
-        for (int i  = 0; i < MC.NumberSingles(); i++){
-            if (MC.singles_open[i] == false){ /// means we have an initial value for all of the variables.
-                // compute an A-hat for this one.
 
-                camera_index = MC.singles[i].lhs;
+                   // is point k here?
+                   if (k >= CCV[camera_index]->P_class->min_max_id_squares[pattern_superscript].first &&
+                           k <= CCV[camera_index]->P_class->min_max_id_squares[pattern_superscript].second){ // i.e., is k on this pattern/FR
+                       if (CCV[camera_index]->points_present[local_time_index].at(k) == true){ // is k detected.
 
-                pattern_graph_index = MC.singles[i].rhs[1];
-                time_graph_index = MC.singles[i].rhs[2];
+                           out << "Camera " << camera_index << " pattern " << pattern_superscript << ", " << time_superscript << endl;
 
-                time_superscript = MC.V_index.at(time_graph_index);
-                pattern_superscript = MC.V_index.at(pattern_graph_index);
-
-                local_time_index = time_superscript - CCV[camera_index]->start_time_this_camera;
-
-                start_j = number_corners_per*pattern_superscript;
-                end_j = number_corners_per*(pattern_superscript + 1);
-
-                // is point k here?
-                //              if (k >= CCV[camera_index]->P_class->min_max_id_squares[pattern_superscript].first &&
-                //                      k <= CCV[camera_index]->P_class->min_max_id_squares[pattern_superscript].second){ // i.e., is k on this pattern/FR
-                if (k >= start_j && k < end_j){
-                    if (CCV[camera_index]->points_present[local_time_index].at(k) == true){ // is k detected.
-
-                        out << "Camera " << camera_index << " pattern " << pattern_superscript << ", " << time_superscript << endl;
-
-                        // todo do the estimate of the 3d point from these coords -- need undistorted pts..
-                        x_coord = CCV[camera_index]->two_d_point_coordinates_dense[local_time_index](k, 0);
-                        y_coord = CCV[camera_index]->two_d_point_coordinates_dense[local_time_index](k, 1);
-
-                        T(0, 0) = 2.0/CCV[camera_index]->cols;
-                        T(1, 1) = 2.0/CCV[camera_index]->rows;
-                        T(0, 2) = -1;
-                        T(1, 2) = -1;
-
-                        xcam(0) = x_coord;
-                        xcam(1) = y_coord;
-                        xcam(2) = 1;
-
-                        xcam = T*xcam;
-
-                        imagePts.push_back(xcam);
-
-                        //imagePts.push_back(x_coord);
-                        //imagePts.push_back(y_coord);
-
-                        PMatrices.push_back(T*KtimesRT[i]);
-
-                        ceres::CostFunction* cost_function =
-                                ReconstructXStruct::Create(
-                                        &camera_params[12*camera_index], &A_hats[i][0],
-                                        x_coord, y_coord);
-                        problem.AddResidualBlock(cost_function,
-                                NULL /* squared loss */,
-                                &est_threed_vars[k*3]);
-
-                        two_d_counter++;
-                    }
-                }
-            }
-        }
-
-
-
-        if (two_d_counter >= 2){
-
-            // cout << __LINE__ << " line " <<  __FILE__ << endl;
-            MatrixXd LHS(two_d_counter*3, 4+two_d_counter);
-            LHS.setZero();
-
-            cout << __LINE__ << " line " <<  __FILE__ << endl;
-            for (int tdc = 0; tdc < two_d_counter; tdc++){
-                // set the block with the camera matrix
-                //                LHS.block<3, 4>(tdc*3, 0) = PMatrices[tdc].block<3, 4>(0,0);
-                //                LHS(tdc*3, 4 + tdc) = imagePts[tdc*2]; // x coord
-                //                LHS(tdc*3 + 1, 4 + tdc) = imagePts[tdc*2 + 1]; // y coord
-                //                LHS(tdc*3 + 2, 4 + tdc) = 1; // y coord
-
-                LHS.block<3, 4>(tdc*3, 0) = PMatrices[tdc];
-                LHS.block<3, 1>(tdc*3, 4 + tdc) = imagePts[tdc]; // x coord
-
-            }
-
-            //cout << __LINE__ << " line " <<  __FILE__ << endl;
-            JacobiSVD<MatrixXd> svd(LHS, ComputeThinV);
-
-            MatrixXd V = svd.matrixV();
-
-            cout << __LINE__ << " line " <<  __FILE__ << endl;
-            //int colindex = V.cols()
-            MatrixXd xstar = V.block<4, 1>(0, V.cols() - 1);
-            xstar = xstar/xstar(3);
-
-//            est_threed_vars[k*3] = xstar(0);
-//            est_threed_vars[k*3 + 1] = xstar(1);
-//            est_threed_vars[k*3 + 2] = xstar(2);
-
-            //cout << __LINE__ << " line " <<  __FILE__ << endl;
-
-            //cout << "two d number " << two_d_counter << endl;
-            //cout << "LHS" << endl << LHS << endl;
-            //cout << "V " << endl  << V << endl;
-            //cout << "xstar " << endl << xstar << endl;
-            //cout << __LINE__ << " line " <<  __FILE__ << endl;
-            //char ch; cin >> ch;
-
-
-
-
-
-
-
-            has_values[k] = true;
-            Solver::Options options;
-            options.linear_solver_type = ceres::DENSE_QR;
-            options.minimizer_progress_to_stdout = false;
-            Solver::Summary summary;
-            ceres::Solve(options, &problem, &summary);
-
-            out << endl << k << endl;
-            out << summary.BriefReport() << endl;
-        }
-    }
-
-    estimated_threed_points.clear();
-    estimated_threed_points.resize(max_number_obs, Vector3d());
-
-    // TODO at the moment, this includes those that cannot be estimated.
-    // need a map too, so we incorporate that in the metrics.
-
-    // this doesn'
-    for (int i = 0; i < max_number_obs; i++){
-        estimated_threed_points[i](0) = est_threed_vars[3*i];
-        estimated_threed_points[i](1) = est_threed_vars[3*i + 1];
-        estimated_threed_points[i](2) = est_threed_vars[3*i + 2];
-    }
-
-    delete [] est_threed_vars;
-
-    // delete all of the transformations.
-    for (int i = 0; i < MC.NumberSingles(); i++){
-        if (A_hats[i] != 0){
-            delete [] A_hats[i];
-        }
-    }
-
-    A_hats.clear();
-
-
-    ////////////////////////////////////// sub in this version,
-
-
-    /// camera params is initialized and static, b/c we're not going to be altering the camera characteristics.
-      int max_number_obs = CCV[0]->P_class->three_d_points.size();
-
-      // checked -- this is dealloc'd at the end of the function.
-      double* est_threed_vars = new double[max_number_obs*3];
-
-      // need to initialize these ....
-      for (int i = 0; i < max_number_obs*3; i++){
-          est_threed_vars[i] = 0;
-      }
-
-      /// find out where there are at least two observations ...
-      vector< bool > found_one(max_number_obs, false);
-      has_values.clear();
-      has_values.resize(max_number_obs, false);
-      int camera_index, pattern_graph_index, pattern_superscript, time_graph_index, time_superscript;
-
-      // will need to dealloc, but this structure will keep everything where I need it while the optimization runs.
-      vector<double*> A_hats(MC.NumberSingles(), 0);
-
-      Matrix4d C, P, T, A_hat;
-
-      // The vector of variables has one temporary variable at the end.
-      if (MC.NumberVariables() + 1 != int(vector_variables.size())){
-          cout << "The size of the vector sent to ReconstructXFunctionIDsMC is " << vector_variables.size() << endl;
-          cout << "the number of variables according to MC.NumberVariables() + 1 is " << MC.NumberVariables() + 1<< endl;
-          cout << "They should be the same, quitting." << endl;
-          exit(1);
-      }
-
-      // initialize matrix, so we're not doing that all of the time.
-      for (int i  = 0; i < MC.NumberSingles(); i++){
-          if (MC.singles_open[i] == false){ /// means we have an initial value for all of the variables.
-              // compute an A-hat for this one.
-              camera_index = MC.singles[i].lhs;
-
-              pattern_graph_index = MC.singles[i].rhs[1];
-              time_graph_index = MC.singles[i].rhs[2];
-
-              time_superscript = MC.V_index.at(time_graph_index);
-              pattern_superscript = MC.V_index.at(pattern_graph_index);
-
-              C = vector_variables.at(camera_index);
-              P = vector_variables.at(pattern_graph_index);
-              T = vector_variables.at(time_graph_index);
-
-              A_hat = C*T.inverse()*P.inverse();
-
-              A_hats[i]= new double[16];
-
-              for (int r = 0, in = 0; r < 4; r++){
-                  for (int c = 0; c < 4; c++, in++){
-                      A_hats[i][in] = A_hat(r, c);
-                  }
-              }
-          }
-
-      }
-      // walk through by number points, estimate the three D points.
-
-      double x_coord, y_coord;
-
-      int two_d_counter = 0;
-      int local_time_index = 0;
-
-      for (int k = 0; k < max_number_obs; k++){
-          Problem problem;
-
-          two_d_counter = 0;
-          for (int i  = 0; i < MC.NumberSingles(); i++){
-              if (MC.singles_open[i] == false){ /// means we have an initial value for all of the variables.
-                  // compute an A-hat for this one.
-
-                  camera_index = MC.singles[i].lhs;
-
-                  pattern_graph_index = MC.singles[i].rhs[1];
-                  time_graph_index = MC.singles[i].rhs[2];
-
-                  time_superscript = MC.V_index.at(time_graph_index);
-                  pattern_superscript = MC.V_index.at(pattern_graph_index);
-
-                  local_time_index = time_superscript - CCV[camera_index]->start_time_this_camera;
-
-                  // is point k here?
-                  if (k >= CCV[camera_index]->P_class->min_max_id_squares[pattern_superscript].first &&
-                          k <= CCV[camera_index]->P_class->min_max_id_squares[pattern_superscript].second){ // i.e., is k on this pattern/FR
-                      if (CCV[camera_index]->points_present[local_time_index].at(k) == true){ // is k detected.
-
-                          out << "Camera " << camera_index << " pattern " << pattern_superscript << ", " << time_superscript << endl;
-
-                          x_coord = CCV[camera_index]->two_d_point_coordinates_dense[local_time_index](k, 0);
-                          y_coord = CCV[camera_index]->two_d_point_coordinates_dense[local_time_index](k, 1);
-
-                          ceres::CostFunction* cost_function =
-                                  ReconstructXStruct::Create(
-                                          &camera_params[12*camera_index], &A_hats[i][0],
-                                          x_coord, y_coord);
-                          problem.AddResidualBlock(cost_function,
-                                  NULL /* squared loss */,
-                                  &est_threed_vars[k*3]);
-
-                          two_d_counter++;
-                      }
-                  }
-              }
-          }
-
-
-          if (two_d_counter >= 2){
-
-              has_values[k] = true;
-              Solver::Options options;
-              options.linear_solver_type = ceres::DENSE_QR;
-              options.minimizer_progress_to_stdout = false;
-              Solver::Summary summary;
-              ceres::Solve(options, &problem, &summary);
-
-              out << endl << k << endl;
-              out << summary.BriefReport() << endl;
-          }
-      }
-
-      estimated_threed_points.clear();
-      estimated_threed_points.resize(max_number_obs, Vector3d());
-      for (int i = 0; i < max_number_obs; i++){
-          estimated_threed_points[i](0) = est_threed_vars[3*i];
-          estimated_threed_points[i](1) = est_threed_vars[3*i + 1];
-          estimated_threed_points[i](2) = est_threed_vars[3*i + 2];
-      }
-
-      delete [] est_threed_vars;
-
-      // delete all of the transformations.
-      for (int i = 0; i < MC.NumberSingles(); i++){
-          if (A_hats[i] != 0){
-              delete [] A_hats[i];
-          }
-      }
-
-      A_hats.clear();
+                           x_coord = CCV[camera_index]->two_d_point_coordinates_dense[local_time_index](k, 0);
+                           y_coord = CCV[camera_index]->two_d_point_coordinates_dense[local_time_index](k, 1);
+
+                           xcam(0) = x_coord;
+                           xcam(1) = y_coord;
+                           xcam(2) = 1;
+
+                           T(0, 0) = 2.0/float(CCV[camera_index]->cols);
+                           T(1, 1) = 2.0/float(CCV[camera_index]->rows);
+                           T(0, 2) = -1;
+                           T(1, 2) = -1;
+                           imagePts.push_back(T*xcam);
+
+                           PMatrices.push_back(T*KtimesRT[i]);
+
+
+                           ceres::CostFunction* cost_function =
+                                   ReconstructXStruct::Create(
+                                           &camera_params[12*camera_index], &A_hats[i][0],
+                                           x_coord, y_coord);
+                           problem.AddResidualBlock(cost_function,
+                                   NULL /* squared loss */,
+                                   &est_threed_vars[k*3]);
+
+                           two_d_counter++;
+                       }
+                   }
+               }
+           }
+
+
+           if (two_d_counter >= 2){
+
+               MatrixXd LHS(two_d_counter*3, 4+two_d_counter);
+               LHS.setZero();
+
+               cout << __LINE__ << " line " <<  __FILE__ << " length " << PMatrices.size() << ", " << imagePts.size() << endl;
+               for (int tdc = 0; tdc < two_d_counter; tdc++){
+                   // set the block with the camera matrix
+                   LHS.block<3, 4>(tdc*3, 0) = PMatrices[tdc];
+                   LHS(tdc*3, 4 + tdc) = imagePts[tdc](0); // x coord
+                   LHS(tdc*3 + 1, 4 + tdc) = imagePts[tdc](1); // y coord
+                   LHS(tdc*3 + 2, 4 + tdc) = 1; // y coord
+               }
+               cout << "LHS " << endl << LHS << endl;
+
+               //cout << __LINE__ << " line " <<  __FILE__ << endl;
+               JacobiSVD<MatrixXd> svd(LHS, ComputeThinV);
+
+               MatrixXd V = svd.matrixV();
+
+               cout << __LINE__ << " line " <<  __FILE__ << endl;
+               //int colindex = V.cols()
+               MatrixXd xstar = V.block<4, 1>(0, V.cols() - 1);
+               xstar = 1000*(xstar/xstar(3));
+               cout << "xstar " << endl << xstar << endl;
+
+               est_threed_vars[k*3] = xstar(0);
+               est_threed_vars[k*3 + 1] = xstar(1);
+               est_threed_vars[k*3 + 2] = xstar(2);
+
+               has_values[k] = true;
+               Solver::Options options;
+               options.linear_solver_type = ceres::DENSE_QR;
+               options.minimizer_progress_to_stdout = false;
+               Solver::Summary summary;
+               ceres::Solve(options, &problem, &summary);
+
+               out << endl << k << endl;
+               out << summary.BriefReport() << endl;
+           }
+       }
+
+       estimated_threed_points.clear();
+       estimated_threed_points.resize(max_number_obs, Vector3d());
+       for (int i = 0; i < max_number_obs; i++){
+           estimated_threed_points[i](0) = est_threed_vars[3*i];
+           estimated_threed_points[i](1) = est_threed_vars[3*i + 1];
+           estimated_threed_points[i](2) = est_threed_vars[3*i + 2];
+       }
+
+       delete [] est_threed_vars;
+
+       // delete all of the transformations.
+       for (int i = 0; i < MC.NumberSingles(); i++){
+           if (A_hats[i] != 0){
+               delete [] A_hats[i];
+           }
+       }
+
+       A_hats.clear();
+
+//    ////////////////////////////////////// sub in this version,
+//
+//
+//    vector<Matrix4d> KtimesRT(MC.NumberSingles());
+//
+//       // The vector of variables has one temporary variable at the end.
+//       if (MC.NumberVariables() + 1 != int(vector_variables.size())){
+//           cout << "The size of the vector sent to ReconstructXFunctionIDsMC is " << vector_variables.size() << endl;
+//           cout << "the number of variables according to MC.NumberVariables() + 1 is " << MC.NumberVariables() + 1<< endl;
+//           cout << "They should be the same, quitting." << endl;
+//           exit(1);
+//       }
+//
+//       //cout << __LINE__ << " line " <<  __FILE__ << endl;
+//       // initialize matrix, so we're not doing that all of the time.
+//       for (int i  = 0; i < MC.NumberSingles(); i++){
+//           if (MC.singles_open[i] == false){ /// means we have an initial value for all of the variables.
+//               // compute an A-hat for this one.
+//               camera_index = MC.singles[i].lhs;
+//
+//               pattern_graph_index = MC.singles[i].rhs[1];
+//               time_graph_index = MC.singles[i].rhs[2];
+//
+//               time_superscript = MC.V_index.at(time_graph_index);
+//               pattern_superscript = MC.V_index.at(pattern_graph_index);
+//
+//               C = vector_variables.at(camera_index);
+//               P = vector_variables.at(pattern_graph_index);
+//               T = vector_variables.at(time_graph_index);
+//
+//               A_hat = C*T.inverse()*P.inverse();
+//
+//
+//               A_hats[i]= new double[16];
+//
+//               for (int r = 0, in = 0; r < 4; r++){
+//                   for (int c = 0; c < 4; c++, in++){
+//                       A_hats[i][in] = A_hat(r, c);
+//                   }
+//               }
+//
+//               K.setIdentity();
+//               K = CCV[camera_index]->internal_parameters;
+//              // cout << __LINE__ << " line " <<  __FILE__ << endl;
+//               MatrixXd temp = K*A_hat.block<3, 4>(0, 0); // should be a 3x4.
+//               A_hat.block<3, 4>(0,0) = temp;
+//               //cout << __LINE__ << " line " <<  __FILE__ << endl;
+//
+//               KtimesRT[i] = A_hat;
+//           }
+//
+//       }
+//       // walk through by number points, estimate the three D points.
+//
+//       //cout << __LINE__ << " line " <<  __FILE__ << endl;
+//
+//
+//       double x_coord, y_coord;
+//
+//       int two_d_counter = 0;
+//       int local_time_index = 0;
+//       int number_corners_per = CCV[0]->P_class->NumberCornersPerPattern();
+//       int start_j, end_j;
+//
+//       for (int k = 0; k < max_number_obs; k++){
+//           Problem problem;
+//
+//           two_d_counter = 0;
+//
+//           vector<Matrix4d> PMatrices;
+//           vector<double> imagePts;
+//           for (int i  = 0; i < MC.NumberSingles(); i++){
+//               if (MC.singles_open[i] == false){ /// means we have an initial value for all of the variables.
+//                   // compute an A-hat for this one.
+//
+//                   camera_index = MC.singles[i].lhs;
+//
+//                   pattern_graph_index = MC.singles[i].rhs[1];
+//                   time_graph_index = MC.singles[i].rhs[2];
+//
+//                   time_superscript = MC.V_index.at(time_graph_index);
+//                   pattern_superscript = MC.V_index.at(pattern_graph_index);
+//
+//                   local_time_index = time_superscript - CCV[camera_index]->start_time_this_camera;
+//
+//                   start_j = number_corners_per*pattern_superscript;
+//                   end_j = number_corners_per*(pattern_superscript + 1);
+//
+//                   // is point k here?
+//                   //              if (k >= CCV[camera_index]->P_class->min_max_id_squares[pattern_superscript].first &&
+//                   //                      k <= CCV[camera_index]->P_class->min_max_id_squares[pattern_superscript].second){ // i.e., is k on this pattern/FR
+//                   if (k >= start_j && k < end_j){
+//                       if (CCV[camera_index]->points_present[local_time_index].at(k) == true){ // is k detected.
+//
+//                           out << "Camera " << camera_index << " pattern " << pattern_superscript << ", " << time_superscript << endl;
+//
+//                           // todo do the estimate of the 3d point from these coords -- need undistorted pts..
+//                           x_coord = CCV[camera_index]->two_d_point_coordinates_dense[local_time_index](k, 0);
+//                           y_coord = CCV[camera_index]->two_d_point_coordinates_dense[local_time_index](k, 1);
+//
+//                           imagePts.push_back(x_coord);
+//                           imagePts.push_back(y_coord);
+//
+//                           PMatrices.push_back(KtimesRT[i]);
+//
+//                           ceres::CostFunction* cost_function =
+//                                   ReconstructXStruct::Create(
+//                                           &camera_params[12*camera_index], &A_hats[i][0],
+//                                           x_coord, y_coord);
+//                           problem.AddResidualBlock(cost_function,
+//                                   NULL /* squared loss */,
+//                                   &est_threed_vars[k*3]);
+//
+//                           two_d_counter++;
+//                       }
+//                   }
+//               }
+//           }
+//
+//
+//
+//           if (two_d_counter >= 2){
+//
+//              // cout << __LINE__ << " line " <<  __FILE__ << endl;
+//               MatrixXd LHS(two_d_counter*3, 4+two_d_counter);
+//               LHS.setZero();
+//
+//               cout << __LINE__ << " line " <<  __FILE__ << endl;
+//               for (int tdc = 0; tdc < two_d_counter; tdc++){
+//                   // set the block with the camera matrix
+//                   LHS.block<3, 4>(tdc*3, 0) = PMatrices[tdc].block<3, 4>(0,0);
+//                   LHS(tdc*3, 4 + tdc) = imagePts[tdc*2]; // x coord
+//                   LHS(tdc*3 + 1, 4 + tdc) = imagePts[tdc*2 + 1]; // y coord
+//                   LHS(tdc*3 + 2, 4 + tdc) = 1; // y coord
+//               }
+//
+//               //cout << __LINE__ << " line " <<  __FILE__ << endl;
+//               JacobiSVD<MatrixXd> svd(LHS, ComputeThinU | ComputeThinV);
+//
+//               MatrixXd V = svd.matrixV();  MatrixXd U = svd.matrixU();
+//
+//               cout << __LINE__ << " line " <<  __FILE__ << endl;
+//               //int colindex = V.cols()
+//               MatrixXd xstar = V.block<4, 1>(0, V.cols() - 1);
+//               xstar = xstar/xstar(3);
+//
+//               est_threed_vars[k*3] = xstar(0);
+//               est_threed_vars[k*3 + 1] = xstar(1);
+//               est_threed_vars[k*3 + 2] = xstar(2);
+//
+//               //cout << __LINE__ << " line " <<  __FILE__ << endl;
+//
+//               //cout << "two d number " << two_d_counter << endl;
+//               //cout << "LHS" << endl << LHS << endl;
+//               //cout << "V " << endl  << V << endl;
+//               //cout << "xstar " << endl << xstar << endl;
+//               //cout << __LINE__ << " line " <<  __FILE__ << endl;
+//               //char ch; cin >> ch;
+//
+//               has_values[k] = true;
+//               Solver::Options options;
+//               options.linear_solver_type = ceres::DENSE_QR;
+//               options.minimizer_progress_to_stdout = false;
+//               Solver::Summary summary;
+//               ceres::Solve(options, &problem, &summary);
+//
+//               out << endl << k << endl;
+//               out << summary.BriefReport() << endl;
+//           }
+//       }
+//
+//       estimated_threed_points.clear();
+//       estimated_threed_points.resize(max_number_obs, Vector3d());
+//
+//       // TODO at the moment, this includes those that cannot be estimated.
+//       // need a map too, so we incorporate that in the metrics.
+//
+//       // this doesn'
+//       for (int i = 0; i < max_number_obs; i++){
+//           estimated_threed_points[i](0) = est_threed_vars[3*i];
+//           estimated_threed_points[i](1) = est_threed_vars[3*i + 1];
+//           estimated_threed_points[i](2) = est_threed_vars[3*i + 2];
+//       }
+//
+//       delete [] est_threed_vars;
+//
+//       // delete all of the transformations.
+//       for (int i = 0; i < MC.NumberSingles(); i++){
+//           if (A_hats[i] != 0){
+//               delete [] A_hats[i];
+//           }
+//       }
+//
+//       A_hats.clear();
 }
 
 CeresProblemClass::CeresProblemClass(PARAM_TYPE parameter_type, MCcali& MC,	std::ofstream& out){
