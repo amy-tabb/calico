@@ -216,6 +216,9 @@ void CopyFromCalibration(const vector<CameraCali*>& CCV, double* camera_params);
 void BundleAdjustmentCaliCeres(MCcali& MC, const vector<CameraCali*>& CCV, double* camera_params,
 		vector<bool>& bit_vector_true_min, std::ofstream& out, int start_id, int end_id, bool use_all_points);
 
+void ReconstructXFunctionIDsMCwithDLTs(MCcali& MC, vector<Matrix4d>& vector_variables, const vector<CameraCali*>& CCV, double* camera_params,
+        vector< Vector3d >& estimated_threed_points, vector< bool >& has_values, std::ofstream& out);
+
 void ReconstructXFunctionIDsMC(MCcali& MC, vector<Matrix4d>& vector_variables, const vector<CameraCali*>& CCV, double* camera_params,
 		vector< Vector3d >& estimated_threed_points, vector< bool >& has_values, std::ofstream& out);
 

@@ -1161,9 +1161,14 @@ void MCcali::ReconstructionAccuracyErrorAndWriteI(const string& write_dir, int c
 	}
 	}
 
-	ReconstructXFunctionIDsMC(*this, vector_to_use, CCV, camera_params,
-			reconstructed_points, valid_reconstructed_points, out);
+//	ReconstructXFunctionIDsMC(*this, vector_to_use, CCV, camera_params,
+//			reconstructed_points, valid_reconstructed_points, out);
 
+	ReconstructXFunctionIDsMCwithDLTs(*this, vector_to_use, CCV, camera_params,
+	            reconstructed_points, valid_reconstructed_points, out);
+	//void ReconstructXFunctionIDsMCwithDLTs(MCcali& MC, vector<Matrix4d>& vector_variables,
+	  //      const vector<CameraCali*>& CCV, double* camera_params,
+	    //    vector< Vector3d >& estimated_threed_points, vector< bool >& has_values, std::ofstream& out);
 
 	// then process...
 	double summed_error = 0;

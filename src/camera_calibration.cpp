@@ -344,6 +344,11 @@ PatternsCreated::PatternsCreated(const string& read_dir, const string& write_dir
 
 
         number_patterns = number_boards;
+
+
+        // a little hack, to be improved in the next version
+        //square_h_w.push_back(pair<int, int>(squaresY[i], squaresX[i]));
+
     }	else {
         ////////////////////////////////////////////////////////
         //////// Rotate case, possible internal parameters ///////
@@ -619,6 +624,7 @@ PatternsCreated::PatternsCreated(const string& read_dir, const string& write_dir
         }
 
         number_patterns = number_boards;
+
     }
 
     // GET 8 COLORS
@@ -686,6 +692,7 @@ int PatternsCreated::NumberPatterns() const{
 int PatternsCreated::NumberSquares() const{
     return number_total_squares;
 }
+
 
 CameraCali::CameraCali(const string& read_dir, PatternsCreated* P, int max_ext_images, int max_int_images_read,
         int max_int_images_use){
