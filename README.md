@@ -59,7 +59,7 @@ Tabb, Amy, & Feldmann, Mitchell J. (2019). Data and Code from: Calibration of As
 }
 ````
 
-If you use this code in project that results in a publication, please cite at a minimum the paper above, and best practice would be to cite the paper and the dataset.  Otherwise, there are no restrictions in your use of this code.  However, no guarantees are expressed or implied.
+If you use this code in project that results in a publication, please cite at a minimum the paper above, and best practice would be to cite the paper and the dataset.  Otherwise, conditions include those of the [MIT license](https://github.com/amy-tabb/calico/blob/master/license.md) concerning the copyright and license notice.  However, no guarantees are expressed or implied.
 
 ## Changes from published version
 
