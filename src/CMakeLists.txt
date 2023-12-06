@@ -1,41 +1,101 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.24)
 
-project(calico)
+set(CMAKE_C_COMPILER "gcc-8")
+set(CMAKE_CXX_COMPILER "g++-8")
 
-# set the flags, may want to add/change debugging or optimization (-O3) flags as appropriate
-# set(CMAKE_CXX_COMPILER "/usr/bin/g++")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp -Wall -pedantic -Wextra -O -std=c++11 ")
+project(calico-dec2023)
+
+include(CMakePrintHelpers)
 
 find_package (Eigen3 3.3 REQUIRED NO_MODULE)
+
 find_package(Ceres REQUIRED)
 
-# OpenCV required, can specify version.  OpenCV 4.0 not strictly necessary, see the README for more details.
-find_package( OpenCV REQUIRED ) 
+find_package(apriltags REQUIRED) 
 
-add_executable(calico
+find_package(PkgConfig)
+pkg_search_module(apriltag REQUIRED apriltag)
+
+# OpenCV required, can specify version.  OpenCV 4.0 not strictly necessary, see the README for more details.
+find_package( OpenCV REQUIRED COMPONENTS core imgproc imgcodecs aruco calib3d ) 
+
+link_directories(${apriltag_LIBDIR})
+
+
+### go back to this
+
+set(my_USUAL_FLAGS  -Wextra -Wall -g3 -O3 -fopenmp CACHE STRING "; non-profiling compile flags")
+set(my_USUAL_LINKER_FLAGS CACHE STRING "; profiling linker flags")
+
+set(CALICO_EXE calico-dec2023)
+
+set(COMPERROR_EXE compute-dec2023)
+
+set(calico_SOURCES
 calico.cpp
 calico.hpp
 Includes.hpp
 DirectoryFunctions.cpp
 DirectoryFunctions.hpp
-camera_calibration.cpp
-camera_calibration.hpp
-local_charuco.hpp
-local_charuco.cpp
+camera-calibration.cpp
+camera-calibration.hpp
+pattern-parameters.cpp
+pattern-parameters.hpp
+patterns.cpp
+patterns.hpp
+local-charuco.hpp
+local-charuco.cpp
 multicamera.cpp
 multicamera.hpp
-camera_visualization.cpp
-camera_visualization.hpp
-solving_structure.cpp
-solving_structure.hpp
+camera-visualization.cpp
+camera-visualization.hpp
+solving-structure.cpp
+solving-structure.hpp
 helper.cpp
 helper.hpp
+helper-cali.cpp
+helper-cali.hpp
+apriltag-file.cpp
 )
 
-target_link_libraries(calico ${CERES_LIBRARIES} Eigen3::Eigen gomp ${OpenCV_LIBS})
+set(compute_error_SOURCES
+compute-error.cpp
+helper.cpp
+helper.hpp
+camera-visualization.cpp
+camera-visualization.hpp
+)
 
-# install for Docker build 
-set_property(TARGET calico PROPERTY INSTALL_RPATH_USE_LINK_PATH TRUE)
+###################### compute error
 
-install(TARGETS calico  DESTINATION ${CMAKE_INSTALL_PREFIX}/bin )
+set(OBJECT_DIR ${CMAKE_BINARY_DIR}/CMakeFiles/${COMPERROR_EXE}.dir)
+message("-- Object files will be output to: ${OBJECT_DIR}")
+
+add_executable(${COMPERROR_EXE} ${compute_error_SOURCES})
+
+target_include_directories(${COMPERROR_EXE} PRIVATE ${Eigen_INCLUDE_DIRS}  ${apriltag_INCLUDE_DIRS})
+
+target_compile_features(${COMPERROR_EXE} PRIVATE cxx_std_17)
+
+target_compile_options(${COMPERROR_EXE} PRIVATE ${my_USUAL_FLAGS})
+
+target_link_libraries(${COMPERROR_EXE} ${CERES_LIBRARIES} Eigen3::Eigen gomp ${OpenCV_LIBS} ${apriltags_LIBRARIES} ${apriltag_LIBRARIES})
+
+################# calico #############################
+
+# Create OBJECT_DIR variable
+set(OBJECT_DIR ${CMAKE_BINARY_DIR}/CMakeFiles/${CALICO_EXE}.dir)
+message("-- Object files will be output to: ${OBJECT_DIR}")
+
+add_executable(${CALICO_EXE} ${calico_SOURCES})
+
+target_include_directories(${CALICO_EXE} PRIVATE ${Eigen_INCLUDE_DIRS}  ${apriltag_INCLUDE_DIRS})
+
+target_compile_features(${CALICO_EXE} PRIVATE cxx_std_17)
+
+target_compile_options(${CALICO_EXE} PRIVATE ${my_USUAL_FLAGS})
+
+target_link_libraries(${CALICO_EXE} ${CERES_LIBRARIES} Eigen3::Eigen gomp ${OpenCV_LIBS} ${apriltags_LIBRARIES} ${apriltag_LIBRARIES})
+
+
 

@@ -1,5 +1,7 @@
 # calico
 
+**Updated branch Dec 2023. README is not complete yet.**
+
 CALICO: a method for calibrating asynchronous camera networks and/or multicamera systems, version 1.1. April 2020 (Original release November 2019).
 
 Changelog: 
