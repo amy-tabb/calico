@@ -2,11 +2,12 @@
 
 **Updated branch Dec 2023. README is not complete yet.**
 
-CALICO: a method for calibrating asynchronous camera networks and/or multicamera systems, version 1.1. April 2020 (Original release November 2019).
+CALICO: a method for calibrating asynchronous camera networks and/or multicamera systems, version **. December 2023 (Original release November 2019).
 
 Changelog: 
 - Docker image added March 2020.
 - Added incremental method as default, and another overhaul, April 2020.
+- Completed refactoring and rewrite; allows use of April tags.
 
 Roadmap
 - [Contact](#contact)
@@ -26,8 +27,9 @@ Comments/Bugs/Problems: amy.tabb@usda.gov, or open an issue on Github.
 # Underlying ideas; how and when to cite this work
 
 This README file is produced by Amy Tabb as a companion to a paper:
-	Calibration of Asynchronous Camera Networks: CALICO
+	Multi-camera calibration with pattern rigs, including for non-overlapping cameras: CALICO
 
+**TODO** edit with the new version.
 ````latex
 @article{tabb_calibration_2019,
 	title = {Calibration of Asynchronous Camera Networks: CALICO},
@@ -45,8 +47,10 @@ This README file is produced by Amy Tabb as a companion to a paper:
 
 Dataset and/or code:
 
+**TODO update**
 Tabb, Amy, & Feldmann, Mitchell J. (2019). Data and Code from: Calibration of Asynchronous Camera Networks: CALICO (Version 1.0) [Data set]. Zenodo. [http://doi.org/10.5281/zenodo.3520866](http://doi.org/10.5281/zenodo.3520866)
 
+**TODO update**
 ````latex
 @dataset{tabb_amy_2019_3520866,
   author       = {Tabb, Amy and Feldmann, Mitchell J.},
@@ -63,18 +67,9 @@ Tabb, Amy, & Feldmann, Mitchell J. (2019). Data and Code from: Calibration of As
 
 If you use this code in project that results in a publication, please cite at a minimum the paper above, and best practice would be to cite the paper and the dataset.  Otherwise, there are no restrictions in your use of this code.  However, no guarantees are expressed or implied.
 
-## Changes from published version
-
-The code has been updated to use an interleaved solve of the multi-camera calibration problem.  Whereas before, steps 4 and 5 of the arXiv paper were:
-
-4: Find the initial solution set V0 by iteratively solving first individual, and then pairwise uninitialized variables found at prior iterations (using a closed-form method), section 4.4 of the paper.
-
-5: Find  the  final  solution  set V by  refining  the  estimated HTMs through reprojection error minimization (i.e. Levenberg-Marquardt algorithm), section 4.5 of the paper.
-
-This version of calico is still available, using the `--non-incremental` flag.  Now, however, the default setting is to solve the problem incrementally for variables: a closed-form solution is used as an initial solution for non-linear minimization of reprojection error through Levenberg-Marquardt.  For some datasets, the result is very similar to the prior result.  For others, the new approach is better and for other datasets we are working on, the new approach works much better.  
-
 ## Docker release
 
+**TODO work on this**
 To avoid building the code yourself, a Docker image of this project is available, and the Dockerfile used to generate it is part of this repository.
 
 I suggest using the Docker release to evaluate this code and as a fast way to get started with it, as the code itself runs quickly.  If you want to extend or look at the details of the code, you can build it yourself using the instructions and code in this repository.
@@ -85,6 +80,7 @@ I suggest using the Docker release to evaluate this code and as a fast way to ge
 
 ### Pull the image
 
+**TODO work on this**
 The image for CALICO is : [amytabb/calico](https://hub.docker.com/r/amytabb/calico).
 
 ```bash
@@ -93,6 +89,7 @@ docker pull amytabb/calico
 
 ### Run the image
 
+**TODO work on this**
 CALICO needs to read and write results to disk; to do so with Docker means that we need to mount a portion of your hard drive to a volume in the Docker image.
 
 I used a bind mount below; the Docker image's volume is `docker_dir` and will not change no matter which machine or dataset you run it on.  `/full/file/path/on/your/machine` is the directory that you want the reading and writing to occur.  
@@ -130,6 +127,7 @@ And from here on out, we issue commands from this Docker container, which is wri
 
 ## Dependencies
 
+**TODO work on this**
 This code uses the Ceres, OpenCV 4.0, OpenMP, and Eigen libraries.  Ceres *can* be used without cmake, but is best used with cmake.  I've included instructions for building with cmake, and the specific OpenCV libraries needed, as well as what OpenCV 3.x versions have worked without alteration.
 
 [Ceres](http://ceres-solver.org/)
@@ -146,9 +144,7 @@ We are not responsible for whatever it takes to get Ceres to build; but advise t
 
 [OpenMP](https://www.openmp.org/) OpenMP is used to parallelize some sections of the individual camera calibration section.  On Ubuntu, to install the library, run `sudo apt-get install libgomp1` at a terminal.   **Now OpenMP is required.**  Evidently, OpenMP support on MacOS is ... difficult to accomplish.  If you have notes on getting this to work on MacOs, let me know so that I can add them to this document.  If you cannot get OpenMP working and you have a Mac (or Windows), I suggest using the Docker container to run calico.
 
-[tex-live](https://tug.org/texlive/) If you enable the `--verbose` option for CALICO, some of the output will be written to latex files, and then .pdfs will be generated.  To get this all to work, the `pdflatex` needs to be available.  On Ubuntu again, run `sudo apt-get install texlive-latex-base` to get started.
-
-[exiftool](https://owl.phy.queensu.ca/~phil/exiftool/) This is only needed for the `--rotate` case, which is specific to our laboratory.  I doubt that other users will need it, but if you are running the `rot1` and `rot2` datasets, you will need this.  On Ubuntu, install with `sudo apt-get install exiftool`. 
+**APRIL libraries**
 
 This code has been tested on Ubuntu 16.04 and Ubuntu 18.04.  You are welcome to convert it to Windows, but I have not.  While OpenCV is available from distribution repositories, my long experience with it is has always been to build from the source to get the best results.
 
@@ -194,6 +190,7 @@ where `/usr/local/opencv41/lib/cmake/opencv4/` is the directory containing `Open
 
 ## Running
 
+**TODO work on this**
 To see the available options, run `./calico` with no arguments or `--help`.:
 
 ````
