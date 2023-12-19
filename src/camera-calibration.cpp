@@ -363,7 +363,7 @@ void CameraCali::FindCornersApril(const string& write_dir, bool write_internal_i
             vector<AprilTags::TagDetection> detections = P_class->pp.ATObject.m_tagDetector->extractTags(grayCopy);
 
             // print out each detection
-            cout << detections.size() << " tags detected:" << endl;
+            cout << detections.size() << " ID tags detected for image " << i << endl;
 
             // draw results -- dealing with the possibility of more than one board per image.
             if(detections.size() > 0) {
