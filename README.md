@@ -5,6 +5,7 @@
 CALICO: a method for calibrating asynchronous camera networks and/or multicamera systems, version **. December 2023 (Original release November 2019).
 
 Changelog: 
+- code factoring and reorganization; added April Tags support. January 2024.
 - Docker image added March 2020.
 - Added incremental method as default, and another overhaul, April 2020.
 - Completed refactoring and rewrite; allows use of April tags.
@@ -69,17 +70,15 @@ If you use this code in project that results in a publication, please cite at a 
 
 ## Docker release
 
-**TODO work on this**
-To avoid building the code yourself, a Docker image of this project is available, and the Dockerfile used to generate it is part of this repository.
+Work in progress.
 
-I suggest using the Docker release to evaluate this code and as a fast way to get started with it, as the code itself runs quickly.  If you want to extend or look at the details of the code, you can build it yourself using the instructions and code in this repository.
 
 ### Install Docker
 
 [Install Docker](https://docs.docker.com/install/), if you haven't already.  I endorse uninstalling old versions if you have them floating around.
 
 ### Pull the image
-
+14212
 **TODO work on this**
 The image for CALICO is : [amytabb/calico](https://hub.docker.com/r/amytabb/calico).
 
