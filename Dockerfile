@@ -52,7 +52,7 @@ RUN git clone https://github.com/opencv/opencv_contrib.git
 
 WORKDIR /opencv/build 
 
-RUN cmake -D CMAKE_BUILD_TYPE=Release -D -DOPENCV_EXTRA_MODULES_PATH=../opencv_contrib/modules CMAKE_INSTALL_PREFIX=/usr/local ..
+RUN cmake -D CMAKE_BUILD_TYPE=Release -D OPENCV_EXTRA_MODULES_PATH=/opencv_contrib/modules CMAKE_INSTALL_PREFIX=/usr/local /opencv
 
 RUN make -j8
 
@@ -66,7 +66,9 @@ RUN git clone https://github.com/amy-tabb/apriltags-lib.git
 
 WORKDIR /apriltags-lib/build 
 
-RUN cmake ..
+RUN apt-get install -y libv4l-dev
+
+RUN cmake /apriltags-lib
 
 RUN make -j8
 
