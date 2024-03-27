@@ -24,5 +24,7 @@ void ReadDirectory(string dir_name, vector<string>& content_names);
 
 bool IsDirectory(string dir_name);
 
+bool SortbyLength(string s0, string s1);
+
 
 #endif /* DIRECTORYFUNCTIONS_HPP_ */

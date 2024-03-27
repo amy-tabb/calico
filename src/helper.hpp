@@ -10,9 +10,28 @@
 
 #include "Includes.hpp"
 
+class profileInfo{
+public:
+    int doProfile = 0;
+    string file = "temp.txt";
+    ofstream stream;
+
+    profileInfo();
+    profileInfo(string f);
+
+};
+
+extern profileInfo profileClass;
+
 template<class T>
 std::string FormatWithCommas(T value)
 {
+    if (profileClass.doProfile){
+          #pragma omp critical
+                  {
+                      profileClass.stream << "PROFILE  helper.hpp, line " << __LINE__ << endl;
+                  }
+              }
 	uint64_t uvalue = value;
 	bool negative = false;
 	if (value < 0){
@@ -43,11 +62,9 @@ std::string FormatWithCommas(T value)
 
 string FindValueOfFieldInFile(const string& filename, const string& fieldTag, bool separator, bool kill_if_not_found);
 
-string FindMultipleStringValueOfFieldInFile(const string& filename, const string& fieldTag, bool separator, bool kill_if_not_found, int number_items);
-
 void EnsureDirHasTrailingBackslash(string& write_directory);
 
-bool sort_by_x( const pair<Point2f, Point2f>& p0, const pair<Point2f, Point2f>& p1);
+bool CheckExistenceOfDirectory(string write_directory);
 
 void TestStream(const ifstream& in, const string& filename);
 

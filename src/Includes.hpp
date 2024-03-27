@@ -17,7 +17,6 @@
 #include <algorithm>
 #include <inttypes.h>
 #include <parallel/algorithm>
-#include <iostream>
 #include <algorithm>
 #include <iterator>
 #include <vector>
@@ -31,7 +30,6 @@
 #include "glog/logging.h"
 #include "ceres/ceres.h"
 
-
 #include <opencv2/core/core.hpp>
 #include <opencv2/core/mat.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -41,8 +39,28 @@
 #include <opencv2/aruco/charuco.hpp>
 #include <opencv2/core/utility.hpp>
 #include <opencv2/imgproc.hpp>
+#include <opencv2/imgcodecs.hpp>
 #include <Eigen/Dense>
 #include <Eigen/Eigenvalues>
+#include <Eigen/Geometry>
+
+#include <apriltags/TagDetector.h>
+#include <apriltags/Tag16h5.h>
+#include <apriltags/Tag25h7.h>
+#include <apriltags/Tag25h9.h>
+#include <apriltags/Tag36h9.h>
+#include <apriltags/Tag36h11.h>
+
+#include <apriltag/apriltag.h>
+#include <apriltag/tag36h11.h>
+#include <apriltag/tag25h9.h>
+#include <apriltag/tag16h5.h>
+#include <apriltag/tagCircle21h7.h>
+#include <apriltag/tagCircle49h12.h>
+#include <apriltag/tagCustom48h12.h>
+#include <apriltag/tagStandard41h12.h>
+#include <apriltag/tagStandard52h13.h>
+#include "apriltag-file.hpp"
 
 
 using namespace Eigen;
@@ -64,6 +82,7 @@ using std::list;
 using std::vector;
 using std::map;
 using std::pair;
+using std::isnan;
 
 #include <sys/stat.h>
 #include <sys/time.h>

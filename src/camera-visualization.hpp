@@ -26,7 +26,10 @@ int create_cameras(const vector<Matrix3d>& internal, const vector<Matrix4d>& ext
 
 void WritePatternsSkips(const vector<Vector3d>& pattern_points, int index_number, const string& outfile);
 
-void WritePatterns(const vector<Vector3d>& pattern_points, int chess_h, int chess_w, int index_number, const string& outfile);
+void WritePatternsCharuco(const vector<Vector3d>& pattern_points, int chess_h, int chess_w, int index_number, const string& outfile);
+
+void WritePatternsApril(const vector<Vector3d>& pattern_points, int chess_h, int chess_w,
+        int index_number, const string& outfile);
 
 Vector3d ReturnCenter(const Matrix4d& external);
 

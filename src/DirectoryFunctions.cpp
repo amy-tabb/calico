@@ -7,7 +7,10 @@
 
 using namespace std;
 
+#include "helper.hpp"
+
 bool SortbyLength(string s0, string s1){
+
 	if (s0.length() < s1.length()){
 		return true;
 	}	else {
@@ -23,18 +26,10 @@ bool SortbyLength(string s0, string s1){
 	}
 }
 
-bool SortAlphabetically(string s0, string s1){
-	if (s0.compare(s1) <= 0){
-		return true;
-	}	else {
-		return false;
-	}
-}
-
 
 bool IsDirectory(string dir_name){
 
-	struct stat info;
+    struct stat info;
 	bool is_dir = false;
 	if( stat( dir_name.c_str(), &info ) != 0 ){
 
