@@ -1,6 +1,6 @@
 # calico
 
-**Updated branch Dec 2023. Some modifications are still pending.**
+**Updated branch Dec 2023-March 2024. Some modifications are still pending.**
 
 CALICO: a method for calibrating asynchronous camera networks and/or multicamera systems, version **. December 2023 (Original release November 2019).
 
@@ -48,9 +48,7 @@ This README file is produced by Amy Tabb as a companion to a paper:
 
 Dataset and/or code:
 
-**TODO update**
-Tabb, Amy, & Feldmann, Mitchell J. (2019). Data and Code from: Calibration of Asynchronous Camera Networks: CALICO (Version 1.0) [Data set]. Zenodo. [http://doi.org/10.5281/zenodo.3520866](http://doi.org/10.5281/zenodo.3520866)
-
+Tabb, Amy, & Feldmann, Mitchell. J. (2023). Data and Code from: Multi-camera calibration with pattern rigs, including for non-overlapping cameras: CALICO [Data set]. Zenodo. [http://doi.org/0.5281/zenodo.3520865](http://doi.org/0.5281/zenodo.3520865)
 **TODO update**
 ````latex
 @dataset{tabb_amy_2019_3520866,
@@ -435,7 +433,6 @@ Reconstructed patterns are written in the `reconstructed-patterns` directory.
 
 RAE, reconstruction accuracy error, is computed assuming that the pattern has been transformed back to the world coordinate system.  In the camera calibration literature, and in the conventions I used in creating CALICO, the world coordinate system is at (0,0,0) and the pattern's points are distributed on the X-Y plane.  
 
-**TODO**
 To assess the difference between the ideal world coordinate system (as defined by a pattern) and the computed transformation, there are 3D model files that again one can load in their 3D model viewer of choice.   
 - `world-ideal_patternNUMBER.ply` is the coordinate system as defined by the calibration pattern,  
 - `patternNUMBERreconstruction-of-id-pattern-points.ply` is the reconstruction computed by CALICO, and ideally should overlap  `world-ideal_patternNUMBER.ply`, 
