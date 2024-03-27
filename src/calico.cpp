@@ -59,38 +59,37 @@ int main(int argc, char **argv){
         static struct option long_options[] =
         {
                 {"help",   no_argument,       &print_help, 1},
-                // {"rotating", no_argument,       &rotating, 1},
-                {"calibrate", no_argument,       &calibrateGroupCameras, 1},
-                {"create-patterns", no_argument, &create_patterns_only, 1},
-                {"non-zero-tangent", no_argument,       &zero_tangent_dist, 0},
-                {"non-zero-k3", no_argument,            &zero_k3, 0},
-                {"fix-pp", no_argument, &fix_principal_point, 1},
-                {"verbose", no_argument, &verbose, 1},
-                {"charuco",   no_argument,       &is_charuco, 1},
-                {"april",   no_argument,       &is_april, 1},
+                {"calibrate", no_argument,       &calibrateGroupCameras, 1}, //check
+                {"create-patterns", no_argument, &create_patterns_only, 1}, //check
+                {"non-zero-tangent", no_argument,       &zero_tangent_dist, 0}, //check
+                {"non-zero-k3", no_argument,            &zero_k3, 0}, //check
+                {"fix-pp", no_argument, &fix_principal_point, 1}, //check
+                {"verbose", no_argument, &verbose, 1}, //check
+                {"charuco",   no_argument,       &is_charuco, 1}, //check
+                {"april",   no_argument,       &is_april, 1}, //check
                 /* These options don’t set a flag.
                  We distinguish them by their indices. */
-                {"input",   required_argument, 0, 'a'},
-                {"output",  required_argument, 0, 'b'},
-                {"camera-size", required_argument, 0, 'c'},
+                {"input",   required_argument, 0, 'a'}, //check
+                {"output",  required_argument, 0, 'b'}, //check
+                {"camera-size", required_argument, 0, 'c'}, //check
                 {"focal-px",  required_argument, 0, 'd'},
-                {"src-dir", required_argument, 0, 'e'},
-                {"max-internal-read", required_argument, 0, 'f'},
-                {"max-internal-use", required_argument, 0, 'g'},
-                {"max-external", required_argument, 0, 'h'},
-                {"k", required_argument, 0, 'i'},
-                {"track-size", required_argument, 0, 'j'},
-                {"num-pattern", required_argument, 0, 'k'},
-                {"num-threads", required_argument, 0, 'l'},
-                {"perc-ae", required_argument, 0, 'm'},
-                {"perc-rp", required_argument, 0, 'n'},
+                {"src-dir", required_argument, 0, 'e'}, //check
+                {"max-internal-read", required_argument, 0, 'f'}, //check
+                {"max-internal-use", required_argument, 0, 'g'}, //check
+                {"max-external", required_argument, 0, 'h'}, //check
+                {"k", required_argument, 0, 'i'}, //check
+                {"track-size", required_argument, 0, 'j'}, //check
+                {"num-pattern", required_argument, 0, 'k'}, //check
+                {"num-threads", required_argument, 0, 'l'}, //check
+                {"perc-ae", required_argument, 0, 'm'}, //check
+                {"perc-rp", required_argument, 0, 'n'}, //check
         };
 
 
         if (argc == 1){ print_help = 1; }
 
         if (print_help == 1){
-            cout << "Printing help for calico, version 1.1, April 2020 TODO redo."<< endl;
+            cout << "Printing help for calico, Dec. 2023."<< endl;
 
             cout << "ESSENTIAL FUNCTIONALITY -------------------" << endl;
             cout << std::left << setw(30) << "--verbose" << "No arguments.  Writes additional information during the run." << endl;
@@ -99,6 +98,9 @@ int main(int argc, char **argv){
                                 cout << "multicamera system." << endl;
             cout << std::left << setw(30) << "--num-threads "<< "Number of threads to use.  Default is # returned by ";
             cout << "omp_get_max_threads();, currently = " << number_threads << endl;
+            cout << std::left << setw(30) << "--charuco" << "Using charuco patterns." << endl;
+            cout << std::left << setw(30) << "--april" << "Using AprilTag patterns." << endl;
+
 
             cout << endl;
             cout << "DIRECTORIES AND PATHS ----------------------- " << endl;

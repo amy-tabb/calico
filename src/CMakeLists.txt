@@ -17,7 +17,11 @@ find_package(PkgConfig)
 pkg_search_module(apriltag REQUIRED apriltag)
 
 # OpenCV required, can specify version.  OpenCV 4.0 not strictly necessary, see the README for more details.
-find_package( OpenCV REQUIRED COMPONENTS core imgproc imgcodecs aruco calib3d ) 
+# OpenCV 4.4 and greater not compatable. 
+find_package( OpenCV 4.3.0 REQUIRED COMPONENTS core imgproc imgcodecs aruco calib3d )
+# alternate method, with find any installed OpenCV and use the latest version. Note calico will not
+# build with OpenCV > 4.3.0, but you can find which versions you have installed this way. 
+#find_package( OpenCV REQUIRED COMPONENTS core imgproc imgcodecs aruco calib3d ) 
 
 link_directories(${apriltag_LIBDIR})
 
@@ -93,6 +97,12 @@ target_compile_features(${CALICO_EXE} PRIVATE cxx_std_17)
 target_compile_options(${CALICO_EXE} PRIVATE ${my_USUAL_FLAGS})
 
 target_link_libraries(${CALICO_EXE} ${CERES_LIBRARIES} Eigen3::Eigen gomp ${OpenCV_LIBS} ${apriltags_LIBRARIES} ${apriltag_LIBRARIES})
+
+################ installs #############################
+
+install(TARGETS ${CALICO_EXE} DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+
+install(TARGETS ${COMPERROR_EXE} DESTINATION ${CMAKE_INSTALL_PREFIX}/bin) 
 
 
 

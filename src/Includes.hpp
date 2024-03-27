@@ -82,6 +82,7 @@ using std::list;
 using std::vector;
 using std::map;
 using std::pair;
+using std::isnan;
 
 #include <sys/stat.h>
 #include <sys/time.h>
