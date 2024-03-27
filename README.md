@@ -49,6 +49,7 @@ This README file is produced by Amy Tabb as a companion to a paper:
 Dataset and/or code:
 
 Tabb, Amy, & Feldmann, Mitchell. J. (2023). Data and Code from: Multi-camera calibration with pattern rigs, including for non-overlapping cameras: CALICO [Data set]. Zenodo. [http://doi.org/0.5281/zenodo.3520865](http://doi.org/0.5281/zenodo.3520865)
+
 **TODO update**
 ````latex
 @dataset{tabb_amy_2019_3520866,
