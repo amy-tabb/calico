@@ -1,6 +1,6 @@
 # calico
 
-**Updated branch Dec 2023. Some modifications are still pending.**
+**Updated branch Dec 2023.**
 
 CALICO: a method for calibrating asynchronous camera networks and/or multicamera systems, version **. December 2023 (Original release November 2019).
 
@@ -30,17 +30,17 @@ Comments/Bugs/Problems: amy.tabb@usda.gov, or open an issue on Github.
 This README file is produced by Amy Tabb as a companion to a paper:
 	Multi-camera calibration with pattern rigs, including for non-overlapping cameras: CALICO
 
-**TODO** edit with the new version.
+
 ````latex
-@article{tabb_calibration_2019,
-	title = {Calibration of Asynchronous Camera Networks: CALICO},
+@article{tabb_calibration_2024
+	title = {Multi-camera calibration with pattern rigs, including for non-overlapping cameras: CALICO},
 	url = {http://arxiv.org/abs/1903.06811},
 	abstract = {},
-	urldate = {2019-11-14},
+	urldate = {2024-03-27},
 	journal = {arXiv:1903.06811 [cs]},
 	author = {Tabb, Amy and Medeiros, Henry and Feldmann, Mitchell J. and Santos, Thiago T.},
-	month = nov,
-	year = {2019},
+	month = mar,
+	year = {2024},
 	note = {arXiv: 1903.06811},
 	keywords = {Computer Science - Computer Vision and Pattern Recognition}
 }
@@ -48,23 +48,23 @@ This README file is produced by Amy Tabb as a companion to a paper:
 
 Dataset and/or code:
 
-**TODO update**
-Tabb, Amy, & Feldmann, Mitchell J. (2019). Data and Code from: Calibration of Asynchronous Camera Networks: CALICO (Version 1.0) [Data set]. Zenodo. [http://doi.org/10.5281/zenodo.3520866](http://doi.org/10.5281/zenodo.3520866)
+Tabb, Amy, & Feldmann, Mitchell J. (2023). Data and Code from: Calibration of Asynchronous Camera Networks: CALICO (Version v2) [Data set]. Zenodo. [http://doi.org/10.5281/zenodo.3520865](http://doi.org/10.5281/zenodo.3520865)
 
-**TODO update**
 ````latex
-@dataset{tabb_amy_2019_3520866,
+@dataset{tabb_amy_2023_3520865,
   author       = {Tabb, Amy and Feldmann, Mitchell J.},
   title        = {Data and Code from: Calibration of Asynchronous 
                    Camera Networks: CALICO},
   month        = nov,
-  year         = 2019,
+  year         = 2023,
   publisher    = {Zenodo},
-  version      = {1.0},
-  doi          = {10.5281/zenodo.3520866},
-  url          = {https://doi.org/10.5281/zenodo.3520866}
+  version      = {v1},
+  doi          = {10.5281/zenodo.3520865},
+  url          = {https://doi.org/10.5281/zenodo.3520865}
 }
 ````
+
+
 
 If you use this code in project that results in a publication, please cite at a minimum the paper above, and best practice would be to cite the paper and the dataset.  Otherwise, conditions include those of the [MIT license](https://github.com/amy-tabb/calico/blob/master/license.md) concerning the copyright and license notice.  However, no guarantees are expressed or implied.
 
@@ -78,12 +78,11 @@ Work in progress.
 [Install Docker](https://docs.docker.com/install/), if you haven't already.  I endorse uninstalling old versions if you have them floating around.
 
 ### Pull the image
-14212
-**TODO work on this**
+
 The image for CALICO is : [amytabb/calico-dec2023](https://hub.docker.com/r/amytabb/calico-dec2023).
 
 ```bash
-docker pull amytabb/calico
+docker pull amytabb/calico-dec2023
 ```
 
 ### Run the image
@@ -231,7 +230,7 @@ All other arguments are ignored.
 ````
 
 Assuming you've downloaded some of the datasets from Zenodo [http://doi.org/10.5281/zenodo.3520866](http://doi.org/10.5281/zenodo.3520866), the arguments used to run a sampling is here:
-**todo**
+
 
 sim1:  `./calico-dec2023 --charuco --calibrate --k=8 --perc-ae=0.2 --perc-rp=0.5 --num-threads 24 --input=/home/username/data-calico/sim1/base/ --output=/home/username/data-calico/sim1/result/ --camera-size=40 --track-size=0 --num-pattern=10`
 
