@@ -70,8 +70,6 @@ If you use this code in project that results in a publication, please cite at a 
 
 ## Docker release
 
-Work in progress.
-
 
 ### Install Docker
 
