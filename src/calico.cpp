@@ -659,7 +659,6 @@ void MultipleCameraCalibration(const string& input_dir, const string& output_dir
 
         if (!has_some_to_solve){
 
-            //todo. look at this, what do we do this test -- oh maybe the vars are not connected. make message more descriptive.
             bool can_solve = MC.CanSolveSystem();
             out_trace << "Can solve this system??? " << can_solve << endl;
 
@@ -795,8 +794,9 @@ void MultipleCameraCalibration(const string& input_dir, const string& output_dir
 
     filename = output_dir + "total_results.txt";
 
-     MC.OutputRunResults(filename);
+    // MC.OutputRunResults(filename);
 
+     MC.OutputRunResultsII(filename);
 
     //////////////////////////////////-- DEALLOC -----------////////////////////////////////////////
 

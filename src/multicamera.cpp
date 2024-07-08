@@ -689,8 +689,7 @@ Matrix4d MCcali::MultiplyInitializedValuesOnSideUseThisSolution(const vector<int
     return  RM;
 }
 
-// used 11/27
-void MCcali::OutputRunResults(const string& filename){
+void MCcali::OutputRunResultsII(const string& filename){
 
     ofstream out;
     out.open(filename.c_str());
@@ -713,14 +712,13 @@ void MCcali::OutputRunResults(const string& filename){
 
     out << endl << endl;
     out << "---------------------------------" << endl;
-    out << "Reprojection error " << endl;
     double sum_err = 0;
 
     vector<double> reproj_sums;
     for (int i = 0; i <number_types; i++){
         sum_err = 0;
         for (int j = 0; j < NumberSingles(); j++){
-            sum_err += reprojection_error_by_term_and_type[i][j];
+            sum_err += squared_reprojection_error_by_term_and_type[i][j];
         }
         reproj_sums.push_back(sum_err);
     }
@@ -730,30 +728,23 @@ void MCcali::OutputRunResults(const string& filename){
         out << "Reprojection error, rrmse: " << sqrt(reproj_sums[i]/double(NumberSingles())) << endl;
     }
 
+    out << "Reprojection error " << endl;
+
+    // reconstruction error, averages without square
     out << endl << endl;
-    out << "Reconstruction accuracy error (RAE).  Note that these values are squared (equations 18, 19)" << endl;
+    out << "Reconstruction accuracy error (RAE), unsquared (equation 19)" << endl;
     out << "Number valid image points  " << number_valid_points_rae_strict << endl;
 
-    for (int i = 0; i <number_types; i++){
-        out << descriptor_recorder[i] << ": ";
 
-        out << "RAE w/ BA, average, stddev, median : " << average_rae_ba[i];
-        out << ", " << stddev_rae_ba[i] << ", " << median_rae_ba[i] << endl;
-
-        out << "SQRT -- RAE w/ BA, average, stddev, median : " << sqrt(average_rae_ba[i]);
-        out << ", " << sqrt(stddev_rae_ba[i]) << ", " << sqrt(median_rae_ba[i]) << endl;
-    }
-
-
-    out << endl << endl;
-    if (average_rae_multi.size() > 0){
-
-        out << "Number valid image points multi " << number_valid_points_rae_multi << endl;
         for (int i = 0; i <number_types; i++){
             out << descriptor_recorder[i] << ": ";
-            out << "RAE multi, average, stddev, median : " << average_rae_multi[i] << ", " << stddev_rae_multi[i] << ", " << median_rae_multi[i] << endl;
+
+            out << "RAE w/ BA, average, stddev, median : " << average_rae_ba[i];
+            out << ", " << stddev_rae_ba[i] << ", " << median_rae_ba[i] << endl;
         }
-    }
+
+
+
 
 
     out << endl <<  endl;
@@ -777,7 +768,7 @@ void MCcali::OutputRunResults(const string& filename){
         out << descriptor_recorder[i] << ": ";
 
         for (int j = 0; j < NumberSingles(); j++){
-            out << reprojection_error_by_term_and_type[i][j] << " ";
+            out << squared_reprojection_error_by_term_and_type[i][j] << " ";
         }
         out <<  " Total " << sum_err << endl;
 
@@ -844,11 +835,43 @@ void MCcali::ReconstructionAccuracyErrorAndWriteII(const string& write_dir, int 
     string filename1 = write_dir + "EstimatedVsGroundTruth" + ToString<int>(current_item) + ".txt";
     ofstream ot; ot.open(filename1.c_str());
 
-    double squared_norm;
+
+
+    // todo get rid of this one
+//    double squared_norm;
+//
+//        vector<double> squared_norms;
+//    for (int i = 0; i < number_pts; i++){
+//        if (valid_reconstructed_points[i] == true){
+//            n++;
+//
+//            gt(0) = CCV[0]->P_class->three_d_points[i].x;
+//            gt(1) = CCV[0]->P_class->three_d_points[i].y;
+//            gt(2) = CCV[0]->P_class->three_d_points[i].z;
+//
+//            squared_norm = 0;
+//            for (int j =0; j < 3; j++){
+//                squared_norm += pow(reconstructed_points[i](j) - gt(j), 2);
+//            }
+//
+//            summed_error+= squared_norm;
+//
+//            squared_norms.push_back(squared_norm);
+//
+//            ot << i << endl;
+//            ot << gt.transpose() << endl;
+//            ot << reconstructed_points[i].transpose() << endl;
+//            ot << "squared norm " << squared_norm << endl;
+//            ot << "summed error " << summed_error << endl;
+//        }
+//    }
+
+    double single_norm = 0;
+    double squared_norm = 0;
 
     vector<double> norms;
 
-
+    summed_error = 0;
     for (int i = 0; i < number_pts; i++){
         if (valid_reconstructed_points[i] == true){
             n++;
@@ -862,14 +885,15 @@ void MCcali::ReconstructionAccuracyErrorAndWriteII(const string& write_dir, int 
                 squared_norm += pow(reconstructed_points[i](j) - gt(j), 2);
             }
 
-            summed_error+= squared_norm;
+            single_norm = sqrt(squared_norm);
+            summed_error+= single_norm;
 
-            norms.push_back(squared_norm);
+            norms.push_back(single_norm);
 
             ot << i << endl;
             ot << gt.transpose() << endl;
             ot << reconstructed_points[i].transpose() << endl;
-            ot << "squared norm " << squared_norm << endl;
+            ot << "norm " << sqrt(squared_norm) << endl;
             ot << "summed error " << summed_error << endl;
         }
     }
@@ -1820,7 +1844,7 @@ void MCcali::WriteSolutionAssessErrorII(const string& write_directory, const vec
 
 
     string current_write_dir= write_directory + current_dir + "/";
-    vector<double> reprojection_error(NumberSingles(), 0);
+    vector<double> squared_reprojection_error(NumberSingles(), 0);
 
 
 
@@ -1870,7 +1894,7 @@ void MCcali::WriteSolutionAssessErrorII(const string& write_directory, const vec
                 if (type < 0) {
 
                 }   else {
-                    reprojection_error[i] = CCV[camera_index]->ComputeReprojectionErrorOneImagePattern(Aprime, local_time_index,
+                    squared_reprojection_error[i] = CCV[camera_index]->ComputeReprojectionErrorOneImagePattern(Aprime, local_time_index,
                             pattern_superscript, current_write_dir, write, i, false, 0);
                 }
 
@@ -1888,7 +1912,7 @@ void MCcali::WriteSolutionAssessErrorII(const string& write_directory, const vec
     }
 
     out.close();
-    reprojection_error_by_term_and_type.push_back(reprojection_error);
+    squared_reprojection_error_by_term_and_type.push_back(squared_reprojection_error);
 
 
     WriteSimulatedCamerasAtAllTimes(write_directory, current_dir, CCV, camera_size, track_size, vector_to_use, camColor[0], camColor[1], camColor[2]);
