@@ -663,15 +663,8 @@ void ReadAndComputeErrorCalico(string input_dir, string output_dir, string compa
 
     vector<Matrix4d> externals_gt_relative(number_cameras);
 
-
-    //M = CameraTransformations[i]*Minv;
-
-    // will need to check this.  visualize.  ok, this works.
     for (int i = 0; i < number_cameras; i++){
         externals_gt_relative[i] = externals_gt[i]*externals_gt[0].inverse();
-        // todo take out if working.
-        // testing
-        // externals_gt_relative[i].setIdentity();
 
         cout << "GT relative " << i << endl;
 
@@ -720,11 +713,6 @@ void ReadAndComputeErrorCalico(string input_dir, string output_dir, string compa
                 cam_color_gt(2), rows_cols[0], rows_cols[1], filename, camera_size);
     }
 
-    //        filename = cam_dir + "/all.ply";
-    //
-    //        if (internals.size() > 0){
-    //            create_cameras(internals, externals, cam_color(0), cam_color(1), cam_color(2), CCV[0]->rows, CCV[0]->cols, filename, camera_size);
-    //        }
 
 
     /////////////////// calico cameras //////////////////////////////////////
@@ -786,13 +774,13 @@ void ReadAndComputeErrorCalico(string input_dir, string output_dir, string compa
 
         distortion_coefficients[i] = distortion;
 
-        // if (token.compare(fieldTag) == 0){
+
 
         centers_kr[i] = ReturnCenter(externals_kr[i]);
 
 
         cout << "External " << endl << external << endl;
-        //cout << "Line " << __LINE__ << endl;
+
 
     }
 
@@ -802,10 +790,6 @@ void ReadAndComputeErrorCalico(string input_dir, string output_dir, string compa
     vector<Matrix4d> externals_calico_relative(number_cameras);
 
 
-
-    //M = CameraTransformations[i]*Minv;
-
-    // will need to check this.  visualize.  ok, this works.
     for (int i = 0; i < number_cameras; i++){
         externals_calico_relative[i] = externals_kr[i]*externals_kr[0].inverse();
 
@@ -818,10 +802,6 @@ void ReadAndComputeErrorCalico(string input_dir, string output_dir, string compa
         centers_calico_relative[i] = ReturnCenter(externals_calico_relative[i]);
     }
 
-
-
-
-    //cout << "Line " << __LINE__ << endl;
 
     string calico_dir = output_dir + "calico-cameras-relative/";
 

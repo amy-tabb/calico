@@ -926,7 +926,7 @@ double CameraCali::ComputeReprojectionErrorOneImagePattern(const Matrix4d& ExtPa
     cv::projectPoints( cv::Mat(threed_points_wo_blanks), rvec, tvec, cameraMatrix,  // project
             distCoeffs, imagePoints2);
     err = cv::norm(cv::Mat(twod_points_wo_blanks), cv::Mat(imagePoints2), CV_L2);              // difference
-    reproj_error        += err*err;
+    reproj_error        += err;
 
 
     // scale by the number of points ....

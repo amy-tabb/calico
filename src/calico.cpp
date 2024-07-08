@@ -493,7 +493,7 @@ void MultipleCameraCalibration(const string& input_dir, const string& output_dir
 
     ///////////////////////////////////////////////////////////////////////////////////////////
     ////// Stage 1. Calibrate cameras wrt visible cameras at all time instants,
-    // todo change numbers around after paper is solid
+    //
     ///////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -793,8 +793,6 @@ void MultipleCameraCalibration(const string& input_dir, const string& output_dir
     ceres_out.close();
 
     filename = output_dir + "total_results.txt";
-
-    // MC.OutputRunResults(filename);
 
      MC.OutputRunResultsII(filename);
 

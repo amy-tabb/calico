@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.16)
 #set(CMAKE_C_COMPILER "gcc-8")
 #set(CMAKE_CXX_COMPILER "g++-8")
 
-project(calico-dec2023)
+project(calico-jul24)
 
 include(CMakePrintHelpers)
 
@@ -28,9 +28,9 @@ link_directories(${apriltag_LIBDIR})
 set(my_USUAL_FLAGS  -Wextra -Wall -g3 -O3 -fopenmp CACHE STRING "; non-profiling compile flags")
 set(my_USUAL_LINKER_FLAGS CACHE STRING "; non-profiling linker flags")
 
-set(CALICO_EXE calico-dec2023)
+set(CALICO_EXE calico-jul24)
 
-set(COMPERROR_EXE compute-dec2023)
+set(COMPERROR_EXE compute-jul24)
 
 set(calico_SOURCES
 calico.cpp

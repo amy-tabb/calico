@@ -69,11 +69,6 @@ public:
     vector<vector< Vector3d> > Points_progressive_solutions_multi;
     vector<vector< bool> > Valid_progressive_solutions_multi;
 
-    //todo what are these used for?
-    vector<double> average_rae_multi;
-    vector<double> median_rae_multi;
-    vector<double> stddev_rae_multi;
-
     int number_valid_points_rae_strict;
     int number_valid_points_rae_multi;
 
@@ -92,8 +87,8 @@ public:
     vector<double> summed_c2_cost_function_error_by_type;
     vector< vector< double> > cost_function_error_by_type_c1;
     vector< vector< double> > cost_function_error_by_type_c2;
-    //todo to remove later, replace with unsquared version
-    vector< vector< double> > squared_reprojection_error_by_term_and_type;
+
+    vector< vector< double> > unsquared_reprojection_error_by_term_and_type;
 
     vector<int> type_recorder;
     vector<string> descriptor_recorder;

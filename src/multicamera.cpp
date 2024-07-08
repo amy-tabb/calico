@@ -718,17 +718,18 @@ void MCcali::OutputRunResultsII(const string& filename){
     for (int i = 0; i <number_types; i++){
         sum_err = 0;
         for (int j = 0; j < NumberSingles(); j++){
-            sum_err += squared_reprojection_error_by_term_and_type[i][j];
+            sum_err += unsquared_reprojection_error_by_term_and_type[i][j];
         }
         reproj_sums.push_back(sum_err);
     }
 
+    out << "Reprojection error " << endl;
     for (int i = 0; i <number_types; i++){
         out << descriptor_recorder[i] << ": ";
-        out << "Reprojection error, rrmse: " << sqrt(reproj_sums[i]/double(NumberSingles())) << endl;
+        out << "Reprojection error, average: " << (reproj_sums[i]/double(NumberSingles())) << endl;
     }
 
-    out << "Reprojection error " << endl;
+
 
     // reconstruction error, averages without square
     out << endl << endl;
@@ -768,7 +769,7 @@ void MCcali::OutputRunResultsII(const string& filename){
         out << descriptor_recorder[i] << ": ";
 
         for (int j = 0; j < NumberSingles(); j++){
-            out << squared_reprojection_error_by_term_and_type[i][j] << " ";
+            out << unsquared_reprojection_error_by_term_and_type[i][j] << " ";
         }
         out <<  " Total " << sum_err << endl;
 
@@ -835,36 +836,6 @@ void MCcali::ReconstructionAccuracyErrorAndWriteII(const string& write_dir, int 
     string filename1 = write_dir + "EstimatedVsGroundTruth" + ToString<int>(current_item) + ".txt";
     ofstream ot; ot.open(filename1.c_str());
 
-
-
-    // todo get rid of this one
-//    double squared_norm;
-//
-//        vector<double> squared_norms;
-//    for (int i = 0; i < number_pts; i++){
-//        if (valid_reconstructed_points[i] == true){
-//            n++;
-//
-//            gt(0) = CCV[0]->P_class->three_d_points[i].x;
-//            gt(1) = CCV[0]->P_class->three_d_points[i].y;
-//            gt(2) = CCV[0]->P_class->three_d_points[i].z;
-//
-//            squared_norm = 0;
-//            for (int j =0; j < 3; j++){
-//                squared_norm += pow(reconstructed_points[i](j) - gt(j), 2);
-//            }
-//
-//            summed_error+= squared_norm;
-//
-//            squared_norms.push_back(squared_norm);
-//
-//            ot << i << endl;
-//            ot << gt.transpose() << endl;
-//            ot << reconstructed_points[i].transpose() << endl;
-//            ot << "squared norm " << squared_norm << endl;
-//            ot << "summed error " << summed_error << endl;
-//        }
-//    }
 
     double single_norm = 0;
     double squared_norm = 0;
@@ -1844,7 +1815,8 @@ void MCcali::WriteSolutionAssessErrorII(const string& write_directory, const vec
 
 
     string current_write_dir= write_directory + current_dir + "/";
-    vector<double> squared_reprojection_error(NumberSingles(), 0);
+
+    vector<double> unsquared_reprojection_error(NumberSingles(), 0);
 
 
 
@@ -1894,7 +1866,7 @@ void MCcali::WriteSolutionAssessErrorII(const string& write_directory, const vec
                 if (type < 0) {
 
                 }   else {
-                    squared_reprojection_error[i] = CCV[camera_index]->ComputeReprojectionErrorOneImagePattern(Aprime, local_time_index,
+                    unsquared_reprojection_error[i] = CCV[camera_index]->ComputeReprojectionErrorOneImagePattern(Aprime, local_time_index,
                             pattern_superscript, current_write_dir, write, i, false, 0);
                 }
 
@@ -1912,7 +1884,7 @@ void MCcali::WriteSolutionAssessErrorII(const string& write_directory, const vec
     }
 
     out.close();
-    squared_reprojection_error_by_term_and_type.push_back(squared_reprojection_error);
+    unsquared_reprojection_error_by_term_and_type.push_back(unsquared_reprojection_error);
 
 
     WriteSimulatedCamerasAtAllTimes(write_directory, current_dir, CCV, camera_size, track_size, vector_to_use, camColor[0], camColor[1], camColor[2]);
