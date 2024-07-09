@@ -39,7 +39,7 @@ int main(int argc, char **argv){
     float percentage_global_alg = 0.2;
     float percentage_global_rp = 0.5;
     int interleaved_solve = 1;
-    int doProfile = 0;
+   // int doProfile = 0;
 
     string input_dir = "";
     string output_dir = "";
