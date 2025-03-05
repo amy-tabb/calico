@@ -80,7 +80,7 @@ If you use this code in project that results in a publication, please cite at a 
 The image for CALICO is : [amytabb/calico-dec2023](https://hub.docker.com/r/amytabb/calico-dec2023).
 
 ```bash
-docker pull amytabb/calico-dec2023
+docker pull amytabb/calico-dec2023:mar2024
 ```
 
 ### Run the image
